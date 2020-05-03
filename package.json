@@ -1,0 +1,11 @@
+{
+  "name": "react-readme",
+  "version": "1.0.0",
+  "description": "Run as a script to generate a readme.  It renders your react components as images and optionally inserts the code in the generated readme.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tony Hallett",
+  "license": "ISC"
+}
