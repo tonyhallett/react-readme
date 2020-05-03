@@ -10,6 +10,6 @@ export class ImageGeneratorFromFile implements IImageGeneratorFromFile {
   async generate(componentFolderPath: string, outputPath: string): Promise<void> {
     //need index.js now ?
     const component = this.requirer.require(path.join(componentFolderPath, 'index.js')).default;
-    this.imageGenerator.generate(component, outputPath);
+    await this.imageGenerator.generate(component, outputPath);
   }
 }

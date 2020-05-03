@@ -1,2 +1,8 @@
 import {generateReadme} from './index';
-generateReadme();
+(async function execute(){
+  try{
+    await generateReadme();
+  }catch(e){
+    console.log(e.message);
+  }
+})();

@@ -3,13 +3,15 @@
   "version": "1.0.0",
   "description": "Run as a script to generate a readme.  It renders your react components as images and optionally inserts the code in the generated readme.",
   "main": "dist/index.js",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest",
     "test:cov": "jest --coverage",
-    "build":"npm run clean && node ./node_modules/typescript/bin/tsc",
-    "clean":"node scripts/clean.js"
+    "build": "npm run clean && node ./node_modules/typescript/bin/tsc",
+    "clean": "node scripts/clean.js"
   },
   "author": "Tony Hallett",
   "license": "ISC",

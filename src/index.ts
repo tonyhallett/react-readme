@@ -6,8 +6,8 @@ import { GeneratedReadmeWriter } from "./GeneratedReadmeWriter";
 import { ImageGeneratorFromFile } from "./ImageGeneratorFromFile";
 import { RepngImageGenerator } from "./RepngImageGenerator";
 
-export const generateReadme = () => {
-  generate(
+export const generateReadme = async () => {
+  await generate(
     new AssetManager(new ProcessAssetManagerOptions()),
     new GeneratedReadme(),
     new GeneratedReadmeWriter(),

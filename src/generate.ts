@@ -2,7 +2,7 @@ import { IAssetManager, IGeneratedReadme, IGeneratedReadmeWriter, IImageGenerato
 export default async function generate(assetManager: IAssetManager,  generatedReadMe: IGeneratedReadme, generatedReadMeWriter: IGeneratedReadmeWriter, imageGenerator: IImageGeneratorFromFile) {
   assetManager.cleanComponentImages();
   const componentInfos = await assetManager.getComponentInfos();
-  componentInfos.forEach(async (componentInfo) => {
+  await Promise.all(componentInfos.map(async (componentInfo) => {
     const componentImagePath = assetManager.getComponentImagePath(`${componentInfo.name}.png`);
 
     await imageGenerator.generate(componentInfo.folderPath, componentImagePath);
@@ -15,7 +15,7 @@ export default async function generate(assetManager: IAssetManager,  generatedRe
         altText: componentInfo.name 
       }
     );
-  });
+  }));
   generatedReadMe.surroundWith(
     await assetManager.readSurroundingReadme(true),
     await assetManager.readSurroundingReadme(false)
