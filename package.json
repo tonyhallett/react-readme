@@ -2,10 +2,26 @@
   "name": "react-readme",
   "version": "1.0.0",
   "description": "Run as a script to generate a readme.  It renders your react components as images and optionally inserts the code in the generated readme.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "files": ["dist"],
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:cov": "jest --coverage",
+    "build":"npm run clean && node ./node_modules/typescript/bin/tsc",
+    "clean":"node scripts/clean.js"
   },
   "author": "Tony Hallett",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "fs-extra": "^9.0.0",
+    "repng": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^8.1.0",
+    "@types/jest": "^25.2.1",
+    "jest": "^25.5.4",
+    "ts-jest": "^25.4.0",
+    "typescript": "^3.8.3"
+  }
 }
