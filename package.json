@@ -15,9 +15,16 @@
   },
   "author": "Tony Hallett",
   "license": "ISC",
+  "peerDependencies": {
+    "react":"^16.13.1",
+    "react-dom":"^16.13.1"
+  },
   "dependencies": {
-    "fs-extra": "^9.0.0",
-    "repng": "^4.0.1"
+    "@types/puppeteer": "^2.0.1",
+    "@types/react": "^16.9.34",
+    "@types/react-dom": "^16.9.7",
+    "datauri": "^2.0.0",
+    "fs-extra": "^9.0.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^8.1.0",
