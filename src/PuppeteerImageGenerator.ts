@@ -1,5 +1,5 @@
 import { createElement } from 'react'
-import * as puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer';
 import  { renderToStaticMarkup } from 'react-dom/server';
 const Datauri = require('datauri')
 
@@ -90,7 +90,7 @@ export const generateWithPuppeteer = async <P>(Component : React.ComponentType<P
     height,
   })
 
-  const result = takeScreenshot(page,type,width, height);
+  const result = await takeScreenshot(page,type,width, height);
   await browser.close()
 
   return result
