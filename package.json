@@ -8,8 +8,8 @@
   ],
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "jest",
-    "test:cov": "jest --coverage",
+    "test": "jest --no-cache",
+    "test:cov": "jest --coverage --no-cache",
     "build": "npm run clean && node ./node_modules/typescript/bin/tsc",
     "clean": "node scripts/clean.js"
   },

@@ -1,6 +1,6 @@
 import { createElement } from 'react'
 import puppeteer from 'puppeteer';
-import  { renderToStaticMarkup } from 'react-dom/server';
+import { renderToStaticMarkup } from 'react-dom/server';
 const Datauri = require('datauri')
 
 const baseCSS = `*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif}`
@@ -34,8 +34,8 @@ const getWebfontCSS = (fontpath:string) => {
 }`)
   return css
 }
-type ScreenshotType = 'jpeg'|'png'|'pdf';
-interface Options<P>{
+export type ScreenshotType = 'jpeg'|'png'|'pdf';
+export interface Options<P>{
   css?:string,
   webfont?:any,
   type?:ScreenshotType,
@@ -67,9 +67,8 @@ export const generateWithPuppeteer = async <P>(Component : React.ComponentType<P
     type = 'png',
   } = opts
 
-  const props ={...{width: opts.width, height: opts.height},...opts.props};
   
-  const pageContent = getPageContent(Component, props,css,webfont)
+  const pageContent = getPageContent(Component, opts.props,css,webfont)
   
 
   const browser = await puppeteer.launch(opts.puppeteer)
@@ -116,4 +115,52 @@ async function takeScreenshot(page:puppeteer.Page,type:ScreenshotType,width:numb
     })
   }
   return result;
+}
+export type ComponentScreenshotOptions<P={}> = Omit<Options<P>,'puppeteer'>
+export type ComponentScreenshot<P={}> = ComponentScreenshotOptions<P> & {Component:React.ComponentType<P>,id?:any}
+
+export interface PuppetterGenerationResult{
+  image:Buffer,
+  id:any
+}
+export type PuppeteerGenerator = (componentScreenshots:Array<ComponentScreenshot>,puppeteerOptions?:puppeteer.LaunchOptions)=>Promise<Array<PuppetterGenerationResult>>
+export const generateMultipleWithPuppeteer:PuppeteerGenerator = async (componentScreenshots:Array<ComponentScreenshot>,puppeteerOptions:puppeteer.LaunchOptions={}) => {
+  const browser = await puppeteer.launch(puppeteerOptions);
+  const results = await Promise.all(componentScreenshots.map(async (componentScreenshot, i) => {
+    const {Component,...opts} = componentScreenshot;
+    const {
+      css = '',
+      webfont,
+      type = 'png',
+      id
+    } = opts
+    const pageContent = getPageContent(Component, opts.props,css,webfont)
+    const page = await browser.newPage()
+    await page.setContent(pageContent)
+  
+    let rect = {width:0,height:0}
+    if (!opts.width && !opts.height) {
+      const bodyEl = await page.$('body')
+      const r = await bodyEl!.boxModel();
+      rect = r!;
+    }
+    const width = opts.width || rect.width;
+    const height = opts.height || rect.height;
+  
+    await page.setViewport({
+      width,
+      height,
+    })
+  
+    const result = await takeScreenshot(page,type,width, height);
+    await page.close();
+    return {
+      image:result,
+      id
+    }
+  }));
+  
+  await browser.close()
+  return results;
+  
 }

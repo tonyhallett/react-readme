@@ -3,6 +3,11 @@ import * as fs from 'fs-extra';
 export function readFileString(path:string){
   return fs.readFile(path,'utf8');
 }
+export interface ReadUntilExistsResult{
+  didRead:boolean,
+  read:string,
+  readPath:string|undefined
+}
 export async function readUntilExists(...paths:string[]){
   let read = '';
   let didRead = false;

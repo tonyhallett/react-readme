@@ -1,12 +1,16 @@
-import { IAssetManager, IGeneratedReadme, IGeneratedReadmeWriter, IImageGeneratorFromFile } from './interfaces';
-export default async function generate(assetManager: IAssetManager,  generatedReadMe: IGeneratedReadme, generatedReadMeWriter: IGeneratedReadmeWriter, imageGenerator: IImageGeneratorFromFile) {
+import { IAssetManager, IGeneratedReadme, IGeneratedReadmeWriter, IPuppeteerImageGeneratorWriter } from './interfaces';
+import { ComponentScreenshot } from './PuppeteerImageGenerator';
+export default async function generate(assetManager: IAssetManager,  generatedReadMe: IGeneratedReadme, generatedReadMeWriter: IGeneratedReadmeWriter, puppeteerGeneratorWriter: IPuppeteerImageGeneratorWriter) {
   assetManager.cleanComponentImages();
   const componentInfos = await assetManager.getComponentInfos();
-  await Promise.all(componentInfos.map(async (componentInfo) => {
-    const componentImagePath = assetManager.getComponentImagePath(`${componentInfo.name}.png`);
+  const componentScreenshots = componentInfos.map( componentInfo => {
+    const imageType = componentInfo.componentScreenshot.type === undefined ? 'png' : componentInfo.componentScreenshot.type;
+    const componentImagePath = assetManager.getComponentImagePath(`${componentInfo.name}.${imageType}`);
+    const componentScreenshot:ComponentScreenshot = {
+      ...componentInfo.componentScreenshot,
+      id:componentImagePath
+    }
 
-    await imageGenerator.generate(componentInfo.folderPath, componentImagePath);
-    
     const relativeComponentImagePath = generatedReadMeWriter.getRelativePath(componentImagePath);
     generatedReadMe.addDemo(
       componentInfo.codeDetails, 
@@ -15,10 +19,14 @@ export default async function generate(assetManager: IAssetManager,  generatedRe
         altText: componentInfo.name 
       }
     );
-  }));
+    
+    return componentScreenshot;
+  });
+
   generatedReadMe.surroundWith(
     await assetManager.readSurroundingReadme(true),
     await assetManager.readSurroundingReadme(false)
   );
+  await puppeteerGeneratorWriter.generateAndWrite(componentScreenshots,assetManager.puppeteerLaunchOptions);
   await generatedReadMeWriter.write(generatedReadMe);
 }

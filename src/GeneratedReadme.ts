@@ -14,22 +14,25 @@ export class GeneratedReadme implements IGeneratedReadme {
   }
   addDemo(codeDetails: CodeDetails, componentReadme: string, imageDetails: ImageDetails): void {
     this.ensureSpace();
-    if (componentReadme !== '') {
+    if (componentReadme) {
       this.readme += componentReadme;
       this.addLines();
     }
     this.readme+=this.createMarkdownImage(imageDetails.componentImagePath, imageDetails.altText);
-    this.addLines();
-    this.readme+=this.createMarkdownCode(codeDetails.code, codeDetails.language);
+    if(codeDetails.language){
+      this.addLines();
+      this.readme+=this.createMarkdownCode(codeDetails.code, codeDetails.language);
+    }
+    
   }
   surroundWith(pre: string, post: string): void {
-    if (pre !== '') {
+    if (pre) {
       const currentReadme = this.readme;
       this.readme = pre;
       this.addLines();
       this.readme += currentReadme;
     }
-    if (post !== '') {
+    if (post) {
       this.addLines();
       this.readme += post;
     }
