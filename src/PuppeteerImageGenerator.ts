@@ -45,7 +45,7 @@ export interface Options<P>{
   puppeteer?:puppeteer.LaunchOptions
 }
 
-function getPageContent(Component:any,props:any,css:string,webfont:any){
+function getPageContent(Component:any,props:any,css:string,webfont:any):string{
   let styles = ''
   const el = createElement(Component, props)
   const body = renderToStaticMarkup(el)
@@ -60,7 +60,7 @@ function getPageContent(Component:any,props:any,css:string,webfont:any){
   return html;
 }
 
-export const generateWithPuppeteer = async <P>(Component : React.ComponentType<P>, opts:Options<P>) => {
+export const generateWithPuppeteer = async <P>(Component : React.ComponentType<P>, opts:Options<P>):Promise<Buffer> => {
   const {
     css = '',
     webfont,
@@ -95,7 +95,7 @@ export const generateWithPuppeteer = async <P>(Component : React.ComponentType<P
   return result
 }
 
-async function takeScreenshot(page:puppeteer.Page,type:ScreenshotType,width:number,height:number){
+async function takeScreenshot(page:puppeteer.Page,type:ScreenshotType,width:number,height:number):Promise<Buffer>{
   let result:Buffer
   if (type === 'pdf') {
     result =  await page.pdf({
@@ -162,5 +162,4 @@ export const generateMultipleWithPuppeteer:PuppeteerGenerator = async (component
   
   await browser.close()
   return results;
-  
 }

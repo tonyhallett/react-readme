@@ -7,23 +7,24 @@ export class System implements ISystem{
   path:Path = {
     exists:(filePath:string) => fs.pathExists(filePath),
     extname:(file:string) => path.extname(file),
-    isAbsolute:(path:string) => (path as any).isAbsolute(path),
+    isAbsolute:(filePath:string) => path.isAbsolute(filePath),
     join:(...paths:string[]) => path.join(...paths),
-    absoluteOrCwdRelative:(filePath:string) => {
+    absoluteOrCwdJoin:(filePath:string) => {
       if(this.path.isAbsolute(filePath)){
         return filePath;
       }
-      return path.resolve(filePath);
-    }
+      return path.join(this.cwd,filePath);
+    },
+    relative:(from:string,to:string) => path.relative(from,to)
   }
   fs:FS = {
     emptyDir:(dir:string) => fs.emptyDir(dir),
     readFileString:(filePath:string) => readFileString(filePath),
     readUntilExists:(...paths:string[]) => readUntilExists(...paths),
-    readdir:(dir:string) => fs.readdir(dir)
+    readdir:(dir:string) => fs.readdir(dir),
+    writeFile:(path:string,data:string) => fs.writeFile(path,data)
   }
   cwd = process.cwd()
-
 }
 
 

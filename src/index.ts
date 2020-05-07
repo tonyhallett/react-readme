@@ -1,5 +1,6 @@
 import generate from "./generate";
-import { AssetManager, AssetFolderProvider } from "./AssetManager";
+import { AssetManager } from "./AssetManager";
+import { AssetFolderProvider } from "./AssetFolderProvider";
 import { AssetManagerOptions } from "./AssetManagerOptions";
 import { GeneratedReadme } from "./GeneratedReadme";
 import { GeneratedReadmeWriter } from "./GeneratedReadmeWriter";
@@ -14,10 +15,11 @@ export const generateReadme = async () => {
   const system = new System();
   const requirer:IRequirer = {require}
   const reactReadme = new ReactReadme(system,requirer)
-  
+  const assetManagerOptions = new AssetManagerOptions(system, reactReadme);
+  await assetManagerOptions.init();
   await generate(
     new AssetManager(
-      new AssetManagerOptions(system, reactReadme), 
+      assetManagerOptions, 
       new AssetFolderProvider(system,requirer,reactReadme,new SuffixComponentSorter()),
       system),
     new GeneratedReadme(),

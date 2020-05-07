@@ -113,7 +113,7 @@ describe('generate', () => {
 
         } as any, {
           surroundWith(){},
-          addDemo(){}
+          addComponentGeneration(){}
         } as any,
         {
           write(){},
@@ -170,20 +170,20 @@ describe('generate', () => {
         await generate(assetManager as any,generatedReadme,generatedReadmeWriter,create(MockPuppeteerImageGeneratorWriter));
       })
       it('should add the code details', () => {
-        expect(generatedReadme.addDemo).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addDemo']>>(1,componentInfos[0].codeDetails,expect.anything(),expect.anything());
-        expect(generatedReadme.addDemo).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addDemo']>>(2,componentInfos[1].codeDetails,expect.anything(),expect.anything());
+        expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(1,componentInfos[0].codeDetails,expect.anything(),expect.anything());
+        expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(2,componentInfos[1].codeDetails,expect.anything(),expect.anything());
       })
       it('should add the readme', () => {
-        expect(generatedReadme.addDemo).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addDemo']>>(1,componentInfos[0].codeDetails,componentInfos[0].readme,expect.anything());
-        expect(generatedReadme.addDemo).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addDemo']>>(2,componentInfos[1].codeDetails,componentInfos[1].readme,expect.anything());
+        expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(1,componentInfos[0].codeDetails,componentInfos[0].readme,expect.anything());
+        expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(2,componentInfos[1].codeDetails,componentInfos[1].readme,expect.anything());
       })
       it('should add the relative component image path', () => {
-        expect(generatedReadme.addDemo).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addDemo']>>(1,componentInfos[0].codeDetails,componentInfos[0].readme,expect.objectContaining({componentImagePath:'relative/readme-assets/images/Name1.jpeg'}));
-        expect(generatedReadme.addDemo).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addDemo']>>(2,componentInfos[1].codeDetails,componentInfos[1].readme,expect.objectContaining({componentImagePath:'relative/readme-assets/images/Name2.png'}));
+        expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(1,componentInfos[0].codeDetails,componentInfos[0].readme,expect.objectContaining({componentImagePath:'relative/readme-assets/images/Name1.jpeg'}));
+        expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(2,componentInfos[1].codeDetails,componentInfos[1].readme,expect.objectContaining({componentImagePath:'relative/readme-assets/images/Name2.png'}));
       })
       it('should add the component name as the alt text', () => {
-        expect(generatedReadme.addDemo).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addDemo']>>(1,componentInfos[0].codeDetails,componentInfos[0].readme,expect.objectContaining({altText:componentInfos[0].name}));
-        expect(generatedReadme.addDemo).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addDemo']>>(2,componentInfos[1].codeDetails,componentInfos[1].readme,expect.objectContaining({altText:componentInfos[1].name}));
+        expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(1,componentInfos[0].codeDetails,componentInfos[0].readme,expect.objectContaining({altText:componentInfos[0].name}));
+        expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(2,componentInfos[1].codeDetails,componentInfos[1].readme,expect.objectContaining({altText:componentInfos[1].name}));
       })
     })
     

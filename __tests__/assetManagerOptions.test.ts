@@ -2,7 +2,7 @@ import { AssetManagerOptions } from "../src/AssetManagerOptions";
 
 describe('AssetManagerOptions', () => {
   describe('readmeAssetsFolderPath', () => {
-    it('should be absoluteOrCwdRelative to readmeAssetsFolderPath root option if present', async () => {
+    it('should be absoluteOrCwdJoin to readmeAssetsFolderPath root option if present', async () => {
       const exists = jest.fn().mockReturnValue(true);
       const options = {
         readmeAssetsFolderPath: 'some path'
@@ -11,7 +11,7 @@ describe('AssetManagerOptions', () => {
       const assetManagerOptions = new AssetManagerOptions({
         cwd:'root',
         path:{
-          absoluteOrCwdRelative:(path:string) => `relative/${path}`
+          absoluteOrCwdJoin:(path:string) => `relative/${path}`
         }
       } as any,{
         exists,
@@ -31,7 +31,7 @@ describe('AssetManagerOptions', () => {
       const assetManagerOptions = new AssetManagerOptions({
         cwd:'root',
         path:{
-          absoluteOrCwdRelative:(path:string) => `relative/${path}`
+          absoluteOrCwdJoin:(path:string) => `relative/${path}`
         }
       } as any,{
         exists,
@@ -49,7 +49,7 @@ describe('AssetManagerOptions', () => {
       const assetManagerOptions = new AssetManagerOptions({
         cwd:'root',
         path:{
-          absoluteOrCwdRelative:(path:string) => `relative/${path}`
+          absoluteOrCwdJoin:(path:string) => `relative/${path}`
         }
       } as any,{
         exists,
@@ -72,7 +72,7 @@ describe('AssetManagerOptions', () => {
       const assetManagerOptions = new AssetManagerOptions({
         cwd:'root',
         path:{
-          absoluteOrCwdRelative:(path:string) => `relative/${path}`
+          absoluteOrCwdJoin:(path:string) => `relative/${path}`
         }
       } as any,{
         exists,
@@ -92,7 +92,7 @@ describe('AssetManagerOptions', () => {
       const assetManagerOptions = new AssetManagerOptions({
         cwd:'root',
         path:{
-          absoluteOrCwdRelative:(path:string) => `relative/${path}`
+          absoluteOrCwdJoin:(path:string) => `relative/${path}`
         }
       } as any,{
         exists,

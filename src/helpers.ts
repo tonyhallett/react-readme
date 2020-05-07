@@ -1,30 +1,24 @@
 import * as fs from 'fs-extra';
 
-export function readFileString(path:string){
+export function readFileString(path:string):Promise<string>{
   return fs.readFile(path,'utf8');
 }
 export interface ReadUntilExistsResult{
   didRead:boolean,
-  read:string,
+  read:string|undefined,
   readPath:string|undefined
 }
-export async function readUntilExists(...paths:string[]){
-  let read = '';
-  let didRead = false;
-  if(paths.length===0){
-    return Promise.resolve({read,didRead,readPath:undefined});
-  }
+export async function readUntilExists(...paths:string[]):Promise<ReadUntilExistsResult>{
   for(let i=0;i<paths.length;i++){
     const path = paths[i];
     if(await fs.pathExists(path)){
-      read = await readFileString(path);
-      didRead = true;
+      const read = await readFileString(path);
       return {
         read,
-        didRead,
+        didRead:true,
         readPath:path
       }
     }
   }
-  return Promise.resolve({read,didRead,readPath:undefined});
+  return Promise.resolve({read:undefined,didRead:false,readPath:undefined});
 }

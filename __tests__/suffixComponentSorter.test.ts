@@ -1,5 +1,5 @@
 import {SuffixComponentSorter} from '../src/SuffixComponentSorter';
-import { SortedComponentFolder } from '../src/AssetManager';
+import { SortedComponentFolder } from '../src/AssetFolderProvider';
 
 describe('SuffixComponentSorter', () => {
   it('sorts by suffix, no suffix at the end in order encountered', () => {

@@ -11,8 +11,8 @@ export interface ImageDetails{
   altText:string
 }
 export interface IGeneratedReadme{
-  addDemo(codeDetails: CodeDetails, readme: string, imageDetails:ImageDetails):void
-  surroundWith(pre:string,post:string):void
+  addComponentGeneration(codeDetails: CodeDetails, readme: string, imageDetails:ImageDetails):void
+  surroundWith(pre:string|undefined,post:string|undefined):void
   toString():string
 }
 
@@ -45,7 +45,7 @@ export interface IAssetManager{
   cleanComponentImages():Promise<void>
   getComponentImagePath(...parts:string[]):string;
 
-  readSurroundingReadme(isPre:boolean):Promise<string>
+  readSurroundingReadme(isPre:boolean):Promise<string|undefined>
 
   getComponentInfos():Promise<Array<ComponentInfo>>
 }
@@ -56,7 +56,7 @@ export interface Path{
   join(...paths:string[]):string
   exists(path:string):Promise<boolean>
   extname(file:string):string,
-  absoluteOrCwdRelative(path:string):string
+  absoluteOrCwdJoin(path:string):string
 }
 export interface FS{
   writeFile(path: string, data: string):Promise<void>
@@ -78,5 +78,5 @@ export interface IRequirer{
 
 export interface IReactReadme{
   exists(folderPath:string):Promise<boolean>
-  read<T extends object>(folderPath:string):Promise<T>
+  read<T extends object>(folderPath:string):T
 }

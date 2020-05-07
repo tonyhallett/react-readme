@@ -1,4 +1,4 @@
-import { IComponentSorter, SortedComponentFolder } from "./AssetManager";
+import { IComponentSorter, SortedComponentFolder } from "./AssetFolderProvider";
 
 export class SuffixComponentSorter implements IComponentSorter{
   sort(componentFolderNames: string[]): SortedComponentFolder[] {

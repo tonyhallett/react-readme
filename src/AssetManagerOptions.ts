@@ -13,7 +13,7 @@ export class AssetManagerOptions implements IAssetManagerOptions {
   globalComponentOptions: Partial<ComponentOptions>|undefined;
   private options:GlobalRootOptions|undefined;
   
-  async init(){
+  async init():Promise<void>{
     await this.setOptionsAndReadmeAssetsFolderPath();
     if(this.options){
       this.puppeteerLaunchOptions = this.options.puppeteerLaunchOptions;
@@ -21,22 +21,22 @@ export class AssetManagerOptions implements IAssetManagerOptions {
       this.globalComponentOptions = other;
     }
   }
-  private fallbackDefaultReadmeAssetsFolderName(){
+  private fallbackDefaultReadmeAssetsFolderName():void{
     if(!this.readmeAssetsFolderPath){
-      this.readmeAssetsFolderPath = this.system.path.absoluteOrCwdRelative('README-assets');
+      this.readmeAssetsFolderPath = this.system.path.absoluteOrCwdJoin('README-assets');
     }
   }
   private async setOptionsAndReadmeAssetsFolderPath():Promise<void>{
     if(await this.reactReadme.exists(this.system.cwd)){
-      const globalRootOptions = await this.reactReadme.read<GlobalRootOptions>(this.system.cwd);
+      const globalRootOptions = this.reactReadme.read<GlobalRootOptions>(this.system.cwd);
       this.options = globalRootOptions;
       if(globalRootOptions.readmeAssetsFolderPath){
-        this.readmeAssetsFolderPath=this.system.path.absoluteOrCwdRelative(globalRootOptions.readmeAssetsFolderPath);
+        this.readmeAssetsFolderPath=this.system.path.absoluteOrCwdJoin(globalRootOptions.readmeAssetsFolderPath);
       }
     }else{
       this.fallbackDefaultReadmeAssetsFolderName();
       if(await this.reactReadme.exists(this.readmeAssetsFolderPath)){
-        this.options = await this.reactReadme.read<GlobalOptions>(this.readmeAssetsFolderPath);
+        this.options = this.reactReadme.read<GlobalOptions>(this.readmeAssetsFolderPath);
       }
     }
     this.fallbackDefaultReadmeAssetsFolderName();

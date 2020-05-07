@@ -12,8 +12,13 @@ export class ReactReadme implements IReactReadme{
   exists(folderPath: string): Promise<boolean> {
     return this.system.path.exists(this.getReactReadmeInFolder(folderPath));
   }
-  read<T extends object>(folderPath: string): Promise<T> {
-    return this.requirer.require(this.getReactReadmeInFolder(folderPath));
+  read<T extends object>(folderPath: string):T {
+    const path = this.getReactReadmeInFolder(folderPath);
+    try{
+      return this.requirer.require(path);
+    }catch(e){
+      throw new Error(`error requiring ${path}`);
+    }
   }
 
 }

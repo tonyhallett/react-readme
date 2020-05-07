@@ -2,18 +2,18 @@ import { IGeneratedReadme, CodeDetails, ImageDetails } from "./interfaces";
 
 export class GeneratedReadme implements IGeneratedReadme {
   private readme: string = '';
-  private isFirstDemo = true;
+  private isFirstComponentGeneration = true;
   private addLines() {
     this.readme += '\n\n';
   }
-  private ensureSpace() {
-    if (!this.isFirstDemo) {
+  private ensureSpaceBetweenComponentGeneration() {
+    if (!this.isFirstComponentGeneration) {
       this.addLines();
     }
-    this.isFirstDemo = false;
+    this.isFirstComponentGeneration = false;
   }
-  addDemo(codeDetails: CodeDetails, componentReadme: string, imageDetails: ImageDetails): void {
-    this.ensureSpace();
+  addComponentGeneration(codeDetails: CodeDetails, componentReadme: string, imageDetails: ImageDetails): void {
+    this.ensureSpaceBetweenComponentGeneration();
     if (componentReadme) {
       this.readme += componentReadme;
       this.addLines();
@@ -40,10 +40,10 @@ export class GeneratedReadme implements IGeneratedReadme {
   toString(): string {
     return this.readme;
   }
-  private createMarkdownCode(code: string, language: string) {
+  private createMarkdownCode(code: string, language: string):string {
     return '```' + language + '\n' + code + '```';
   }
-  private createMarkdownImage(path: string, altText: string) {
+  private createMarkdownImage(path: string, altText: string):string {
     return `![alt text](${path} "${altText}")`;
   }
 }

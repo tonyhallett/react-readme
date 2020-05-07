@@ -1,4 +1,5 @@
-import { AssetFolderProvider, ReadmeComponentScreenshotOptions, CodeReplacer, IComponentSorter, SortedComponentFolder } from "../src/AssetManager"
+import { ReadmeComponentScreenshotOptions, CodeReplacer, } from "../src/AssetManager"
+import { AssetFolderProvider, IComponentSorter, SortedComponentFolder} from "../src/AssetFolderProvider"
 import { CodeDetails } from "../src/interfaces";
 
 const noopSorter:IComponentSorter = {
@@ -103,7 +104,7 @@ describe('AssetFolderProvider', () => {
             assetFolderProvider['hasProps'] = hasProps;
             assetFolderProvider['getMergedOptions']=()=>Promise.resolve({});
             assetFolderProvider.readComponentReadMe = readComponentReadMe;
-            assetFolderProvider.getDemoCode=()=>Promise.resolve({} as any);
+            assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
             assetFolderProvider.getComponentScreenshot = () => ({}) as any;
             const componentAssetFolderPath = 'readme-assets/components/Component';
             const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
@@ -174,7 +175,7 @@ describe('AssetFolderProvider', () => {
             }
             assetFolderProvider['getMergedOptions']=()=>Promise.resolve(mergedOptions as any);
             assetFolderProvider.readComponentReadMe = () => Promise.resolve({} as any);
-            assetFolderProvider.getDemoCode=()=>Promise.resolve({} as any);
+            assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
             assetFolderProvider.getComponentScreenshot = getComponentScreenshot;
             const componentAssetFolderPath = 'readme-assets/components/Component';
             const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
@@ -212,10 +213,10 @@ describe('AssetFolderProvider', () => {
           });
         })
 
-        describe('demo code', () => {
-          it('should have the demo code in properties', async () => {
-            const demoCode:CodeDetails = {code:'some code',language:'language'}
-            const getDemoCode=jest.fn().mockReturnValue(Promise.resolve(demoCode))
+        describe('component code', () => {
+          it('should have the component code in properties', async () => {
+            const componentCode:CodeDetails = {code:'some code',language:'language'}
+            const getComponentCode=jest.fn().mockReturnValue(Promise.resolve(componentCode))
             const hasProps = jest.fn().mockReturnValue(Promise.resolve(false));
             const assetFolderProvider = new AssetFolderProvider({
               path:{
@@ -229,19 +230,19 @@ describe('AssetFolderProvider', () => {
             }
             assetFolderProvider['getMergedOptions']=()=>Promise.resolve(mergedOptions as any);
             assetFolderProvider.readComponentReadMe = () => Promise.resolve({} as any);
-            assetFolderProvider.getDemoCode=getDemoCode;
+            assetFolderProvider.getComponentCode=getComponentCode;
             assetFolderProvider.getComponentScreenshot = ()=>({} as any);
             const componentAssetFolderPath = 'readme-assets/components/Component';
             const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
-            expect(componentInfos[0].codeDetails).toEqual(demoCode);
-            expect(getDemoCode).toHaveBeenCalledWith('readme-assets/components/Component/index.js',mergedOptions.codeInReadme,mergedOptions.codeReplacer);
+            expect(componentInfos[0].codeDetails).toEqual(componentCode);
+            expect(getComponentCode).toHaveBeenCalledWith('readme-assets/components/Component/index.js',mergedOptions.codeInReadme,mergedOptions.codeReplacer);
           })
 
-          describe('getDemoCode', () => {
+          describe('getComponentCode', () => {
             it('should return empty code and language if codeInReadme is None',async () => {
               const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider(null as any,null as any,{} as any,noopSorter);
-              const demoCode = await assetFolderProvider.getDemoCode('readme-assets/components/Component', 'None',null as any);
-              expect(demoCode).toEqual({code:'',language:''})
+              const componentCode = await assetFolderProvider.getComponentCode('readme-assets/components/Component', 'None',null as any);
+              expect(componentCode).toEqual({code:'',language:''})
             })
         
             it('should readUntilExists index.js if codeInReadMe is Js and replace', async () => {
@@ -264,8 +265,8 @@ describe('AssetFolderProvider', () => {
                 }
               } as any,null as any,
               {} as any,noopSorter);
-              const demoCode = await assetFolderProvider.getDemoCode('readme-assets/components/Component/index.js', 'Js',codeReplacer);
-              expect(demoCode).toEqual({code:'replaced',language:'javascript'});
+              const componentCode = await assetFolderProvider.getComponentCode('readme-assets/components/Component/index.js', 'Js',codeReplacer);
+              expect(componentCode).toEqual({code:'replaced',language:'javascript'});
               expect(readUntilExists).toHaveBeenCalledWith('readme-assets/components/Component/index.js');
               expect(codeReplacer).toHaveBeenCalledWith('some js');
               expect(extname).toHaveBeenCalledWith('readme-assets/components/Component/index.js');
@@ -291,7 +292,7 @@ describe('AssetFolderProvider', () => {
                 }
               } as any,null as any,{} as any,noopSorter);
         
-              return expect(assetFolderProvider.getDemoCode('readme-assets/components/Component/index.js', 'Js',codeReplacer)).rejects.toThrow('no component file found');
+              return expect(assetFolderProvider.getComponentCode('readme-assets/components/Component/index.js', 'Js',codeReplacer)).rejects.toThrow('no component file found');
             })
            
             it('should readUntilExists with preference order ts, tsx, js if codeInReadMe is not Js and replace', async() => {
@@ -313,8 +314,8 @@ describe('AssetFolderProvider', () => {
                   readUntilExists
                 }
               } as any,null as any, {} as any,noopSorter);
-              const demoCode = await assetFolderProvider.getDemoCode('readme-assets/components/Component/component.js', undefined,codeReplacer);
-              expect(demoCode).toEqual({code:'replaced',language:'typescript'});
+              const componentCode = await assetFolderProvider.getComponentCode('readme-assets/components/Component/component.js', undefined,codeReplacer);
+              expect(componentCode).toEqual({code:'replaced',language:'typescript'});
               expect(codeReplacer).toHaveBeenCalledWith('some ts');
               expect(extname).toHaveBeenCalledWith('readme-assets/components/Component/component.ts');
               expect(readUntilExists).toHaveBeenCalledWith('readme-assets/components/Component/component.ts','readme-assets/components/Component/component.tsx','readme-assets/components/Component/component.js');
@@ -361,8 +362,8 @@ describe('AssetFolderProvider', () => {
                       readUntilExists
                     }
                   } as any,null as any, {} as any,noopSorter);
-                  const demoCode = await assetFolderProvider.getDemoCode('readme-assets/components/Component/component.js', undefined,test.codeReplacer);
-                  expect(demoCode.code).toBe(test.expectedReplacedCode);
+                  const componentCode = await assetFolderProvider.getComponentCode('readme-assets/components/Component/component.js', undefined,test.codeReplacer);
+                  expect(componentCode.code).toBe(test.expectedReplacedCode);
                 })
               })
               
@@ -390,8 +391,8 @@ describe('AssetFolderProvider', () => {
           }
         ]
         tests.forEach(test => {
-          it(`${test.isAbsolute?'should use absolute for getDemoCode and getComponentScreenshot':'should be relative to component folder if not absolute'}`, async () => {
-            const getDemoCode = jest.fn().mockReturnValue(Promise.resolve());
+          it(`${test.isAbsolute?'should use absolute for getComponentCode and getComponentScreenshot':'should be relative to component folder if not absolute'}`, async () => {
+            const getComponentCode = jest.fn().mockReturnValue(Promise.resolve());
             const getComponentScreenshot = jest.fn().mockReturnValue(Promise.resolve());
             const isAbsolute=jest.fn().mockReturnValue(test.isAbsolute)
             const hasProps = jest.fn().mockReturnValue(Promise.resolve(false));
@@ -407,12 +408,12 @@ describe('AssetFolderProvider', () => {
             }
             assetFolderProvider['getMergedOptions']=()=>Promise.resolve(mergedOptions as any);
             assetFolderProvider.readComponentReadMe = () => Promise.resolve({} as any);
-            assetFolderProvider.getDemoCode=getDemoCode;
+            assetFolderProvider.getComponentCode=getComponentCode;
             assetFolderProvider.getComponentScreenshot = getComponentScreenshot;
             const componentAssetFolderPath = 'readme-assets/components/Component';
 
             await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
-            expect(getDemoCode.mock.calls[0][0]).toBe(test.expectedPath);
+            expect(getComponentCode.mock.calls[0][0]).toBe(test.expectedPath);
             expect(getComponentScreenshot.mock.calls[0][0]).toBe(test.expectedPath);
           })
         })
