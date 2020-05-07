@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer';
 import { ReadUntilExistsResult } from "./helpers";
-import { ComponentScreenshot, ComponentScreenshotOptions } from './PuppeteerImageGenerator';
+import { ComponentScreenshot, ComponentScreenshotOptions, ScreenshotType } from './PuppeteerImageGenerator';
 
 export interface CodeDetails{
   code:string,
@@ -31,6 +31,7 @@ export interface ImageGenerationDetail {
 export interface IImageGeneratorFromFile{
   generate(imageGenerationDetails:Array<ImageGenerationDetail>):Promise<void>
 }
+export type ReadmeImageType = Exclude<ScreenshotType,'pdf'>
 
 export interface ComponentInfo {
   codeDetails:CodeDetails

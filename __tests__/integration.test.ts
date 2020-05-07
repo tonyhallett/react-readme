@@ -2,7 +2,7 @@ import generate from '../src/generate'
 import { AssetManager } from '../src/AssetManager'
 import { AssetFolderProvider } from '../src/AssetFolderProvider'
 import { AssetManagerOptions } from '../src/AssetManagerOptions'
-import { IRequirer, IPuppeteerImageGeneratorWriter, ImageDetails, CodeDetails } from '../src/interfaces'
+import { IRequirer, IPuppeteerImageGeneratorWriter, ImageDetails, CodeDetails, ReadmeImageType } from '../src/interfaces'
 import { SuffixComponentSorter } from '../src/SuffixComponentSorter'
 import { GeneratedReadme} from '../src/GeneratedReadme'
 import { GeneratedReadmeWriter} from '../src/GeneratedReadmeWriter'
@@ -10,6 +10,7 @@ import { ReactReadme} from '../src/ReactReadme'
 import { System} from '../src/System' 
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import { ComponentScreenshot } from '../src/PuppeteerImageGenerator'
 jest.mock('../src/GeneratedReadme');
 
 describe('generate', () => {
@@ -146,7 +147,23 @@ describe('generate', () => {
         fileName:`index.${extension}`
       }
     }
-    
+    function createComponentFolders(andTs:boolean){
+      function createComponentFolder(isComponent1:boolean){
+        const component = isComponent1?'Component1':'Component2';
+        const code = andTs?[createCodeFile('js',isComponent1),createCodeFile('ts',isComponent1)]:createCodeFile('js',isComponent1);
+        return {
+          code,
+          name:`${component}`,
+          readme:`${component} read me`
+        }
+      }
+
+      const componentFolders:ComponentFolder[] = [
+        createComponentFolder(true),
+        createComponentFolder(false)
+      ]
+      return componentFolders;
+    }
     const jsOnlyComponentFolders:ComponentFolder[] = [{
       code:createCodeFile('js',true),
       name:'Component1',
@@ -158,7 +175,7 @@ describe('generate', () => {
       readme:'Component2 read me'
     }
     ]
-    const jsTsComponentFolders:ComponentFolder[] = [
+    /* const jsTsComponentFolders:ComponentFolder[] = [
       {
         code:[createCodeFile('js',true),createCodeFile('ts',true)],
         name:'Component1',
@@ -169,7 +186,8 @@ describe('generate', () => {
         name:'Component2',
         readme:'Component2 read me'
       }
-    ]
+    ] */
+    const jsTsComponentFolders:ComponentFolder[] = createComponentFolders(true);
     function getJsOnlyExpectedAddComponentGeneration(assetsFolder = 'README-assets'){
       return [
         {
@@ -186,20 +204,21 @@ describe('generate', () => {
         }
       ]
     }
-    function getJsTsExpectedAddComponentGeneration(expectTs:boolean,assetsFolder = 'README-assets'){
+    function getJsTsExpectedAddComponentGeneration(expectTs:boolean,assetsFolder = 'README-assets',imageType:ReadmeImageType='png'){
       const index = expectTs?1:0;
+      const language = expectTs?'typescript':'javascript';
       return [
         {
-          codeDetails:{code:(jsTsComponentFolders[0].code as GeneratedFile[])[index].contents,language:'typescript'},
+          codeDetails:{code:(jsTsComponentFolders[0].code as GeneratedFile[])[index].contents,language},
           imageDetails:{
             altText:jsTsComponentFolders[0].name,
-            componentImagePath:path.join(assetsFolder,'images',`${jsTsComponentFolders[0].name}.png`)}
+            componentImagePath:path.join(assetsFolder,'images',`${jsTsComponentFolders[0].name}.${imageType}`)}
         },
         {
-          codeDetails:{code:(jsTsComponentFolders[1].code as GeneratedFile[])[index].contents,language:'typescript'},
+          codeDetails:{code:(jsTsComponentFolders[1].code as GeneratedFile[])[index].contents,language},
           imageDetails:{
             altText:jsTsComponentFolders[1].name,
-            componentImagePath:path.join(assetsFolder,'images',`${jsTsComponentFolders[1].name}.png`)}
+            componentImagePath:path.join(assetsFolder,'images',`${jsTsComponentFolders[1].name}.${imageType}`)}
         }
       ]
     }
@@ -303,12 +322,83 @@ describe('generate', () => {
       return test;
     })();
 
+    const preferJsGlobalTest:NoPropsIntegrationTest = (()=> {
+      const test:NoPropsIntegrationTest={
+        description:'Prefer js in global options',
+        expectedAddComponentGenerations:getJsTsExpectedAddComponentGeneration(false),
+        expectedSurroundPre:undefined,
+        expectedSurroundPost:undefined,
+        folderArgs:[
+          [],jsTsComponentFolders,undefined,`{
+            module.exports = {
+              codeInReadme:'Js'
+            }
+          }`
+        ],
+      }
+      return test;
+    })();
+
+    const noCodeGenerationTestGlobal:NoPropsIntegrationTest = (()=> {
+      const componentGenerations =getJsTsExpectedAddComponentGeneration(false);
+      componentGenerations.forEach(componentGeneration => {
+        componentGeneration.codeDetails.code='';
+        componentGeneration.codeDetails.language='';
+      })
+      const test:NoPropsIntegrationTest={
+        description:'No code generation in global options',
+        expectedAddComponentGenerations:componentGenerations,
+        expectedSurroundPre:undefined,
+        expectedSurroundPost:undefined,
+        folderArgs:[
+          [],jsTsComponentFolders,undefined,`{
+            module.exports = {
+              codeInReadme:'None'
+            }
+          }`
+        ],
+      }
+      return test;
+    })();
+    
+    const imageTypeJpegTest:NoPropsIntegrationTest = (()=> {
+      const test:NoPropsIntegrationTest={
+        description:'Global image type',
+        expectedAddComponentGenerations:getJsTsExpectedAddComponentGeneration(true,undefined,'jpeg'),
+        expectedSurroundPre:undefined,
+        expectedSurroundPost:undefined,
+        folderArgs:[
+          [],jsTsComponentFolders,undefined,`{
+            module.exports = {
+              screenshotOptions:{
+                type:'jpeg'
+              }
+            }
+          }`
+        ],
+        additionalExpectations: (generateAndWrite,_) => {
+          const componentScreenshots:Array<ComponentScreenshot> = generateAndWrite.mock.calls[0][0];
+          componentScreenshots.forEach(componentScreenshot => {
+            expect(componentScreenshot.type).toBe('jpeg');
+          })
+        }
+      }
+      return test;
+    })();
+
+    
+    
+    // a) Merging of options
+
     const noPropsIntegrationTests:NoPropsIntegrationTest[] = [
-      basicNoPropsTest,
-      differentAssetsFolderTest,
-      typescriptCodeTest,
-      puppetterLaunchOptionsTest,
-      cleansImagesTest
+      //basicNoPropsTest,
+      //differentAssetsFolderTest,
+      //typescriptCodeTest, // ts over js is the default
+      preferJsGlobalTest, // global react-readme.js
+      noCodeGenerationTestGlobal, // global
+      imageTypeJpegTest
+      //puppetterLaunchOptionsTest,
+      //cleansImagesTest
       
     ]
 

@@ -1,4 +1,4 @@
-import { IAssetManager, ComponentInfo, ISystem } from './interfaces';
+import { IAssetManager, ComponentInfo, ISystem, ReadmeImageType } from './interfaces';
 import { ComponentScreenshotOptions, ScreenshotType } from './PuppeteerImageGenerator';
 import puppeteer from 'puppeteer';
 
@@ -7,7 +7,6 @@ export type CodeReplacer = {
   replace:string
 }|((code:string)=>string)
 
-export type ReadmeImageType = Exclude<ScreenshotType,'pdf'>
 
 export type ReadmeComponentScreenshotOptions=ComponentScreenshotOptions&{type?:ReadmeImageType}
 
