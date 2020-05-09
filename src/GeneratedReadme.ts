@@ -1,4 +1,5 @@
 import { IGeneratedReadme, CodeDetails, ImageDetails } from "./interfaces";
+import fileUrl from 'file-url'
 
 export class GeneratedReadme implements IGeneratedReadme {
   private readme: string = '';
@@ -44,6 +45,7 @@ export class GeneratedReadme implements IGeneratedReadme {
     return '```' + language + '\n' + code + '```';
   }
   private createMarkdownImage(path: string, altText: string):string {
+    path = fileUrl(path,{resolve:false});
     return `![alt text](${path} "${altText}")`;
   }
 }
