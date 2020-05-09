@@ -45,7 +45,8 @@ export class GeneratedReadme implements IGeneratedReadme {
     return '```' + language + '\n' + code + '```';
   }
   private createMarkdownImage(path: string, altText: string):string {
-    path = fileUrl(path,{resolve:false});
+    path = path.replace(/\\/g, '/');
+    path = encodeURI(`${path}`).replace(/[?#]/g, encodeURIComponent);
     return `![alt text](${path} "${altText}")`;
   }
 }
