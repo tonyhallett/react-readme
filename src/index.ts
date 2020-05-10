@@ -10,7 +10,8 @@ import { System } from "./System";
 import { IRequirer } from "./interfaces";
 import { SuffixComponentSorter } from "./SuffixComponentSorter";
 import { ResolvedObjectPathFinder } from "./asset-management/ResolvedObjectPathFinder";
-import { IOptionsProvider, RequiringOptionsProvider } from "./asset-management/IOptionsProvider";
+import { IOptionsProvider } from "./asset-management/IOptionsProvider";
+import { RequiringOptionsProvider } from "./asset-management/RequiringOptionsProvider";
 
 export const generateReadme = async () => {
   const system = new System();

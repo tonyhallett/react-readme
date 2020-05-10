@@ -11,7 +11,7 @@ import { System} from '../src/System'
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { ComponentScreenshot } from '../src/PuppeteerImageGenerator'
-import { RequiringOptionsProvider } from '../src/asset-management/IOptionsProvider'
+import { RequiringOptionsProvider } from '../src/asset-management/RequiringOptionsProvider'
 jest.mock('../src/GeneratedReadme');
 
 describe('generate', () => {
