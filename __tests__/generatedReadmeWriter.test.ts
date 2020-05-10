@@ -2,50 +2,66 @@ import { GeneratedReadmeWriter } from '../src/GeneratedReadmeWriter'
 describe('GeneratedReadMeWriter', () => {
   describe('write', () => {
     
-    it('should write GeneratedReadme toString to absoluteOrCwdJoin the ctor argument', async () => {
-      const readmeFileNameOrPath = 'readmeFileNameOrPath'
+    it('should write GeneratedReadme toString to cwd with name from ctor arg', async () => {
+      const readmeFileName = 'readmeFileName'
       const writeFileString = jest.fn().mockResolvedValue(undefined);
       const generatedReadmeWriter = new GeneratedReadmeWriter({
         path:{
-          absoluteOrCwdJoin(path:string){
-            return `absoluteOrCwdJoin/${path}`;
-          },
+          join:(...paths:string[])=> paths.join('/'),
           relative(from:string,to:string){
             return `${from}:${to}`
           }
         },
         fs:{
           writeFileString
-        }
-      } as any,readmeFileNameOrPath);
+        },cwd:'CWD'
+      } as any,readmeFileName);
 
       await generatedReadmeWriter.write({
         toString:() => 'Generated read me'
       } as any);
-      expect(writeFileString).toHaveBeenCalledWith('absoluteOrCwdJoin/readmeFileNameOrPath','Generated read me');
+      expect(writeFileString).toHaveBeenCalledWith('CWD/readmeFileName','Generated read me');
     })
+
+    describe('GeneratedReadMeWriter.create',() => {
+      it('should write GeneratedReadme toString to cwd/README.md', async () => {
+        const writeFileString = jest.fn().mockResolvedValue(undefined);
+        const generatedReadmeWriter = GeneratedReadmeWriter.create({
+          path:{
+            join:(...paths:string[])=> paths.join('/'),
+            relative(from:string,to:string){
+              return `${from}:${to}`
+            }
+          },
+          fs:{
+            writeFileString
+          },cwd:'CWD'
+        } as any);
+
+        await generatedReadmeWriter.write({
+          toString:() => 'Generated read me'
+        } as any);
+        expect(writeFileString).toHaveBeenCalledWith('CWD/README.md','Generated read me');
+        })
+      });
   });
   describe('getRelativePath', () => {
 
-    it('should be relative to where it writes the readme', () => {
+    it('should be relative to cwd', () => {
       const readmeFileNameOrPath = 'readmeFileNameOrPath'
       const writeFileString = jest.fn().mockResolvedValue(undefined);
       const generatedReadmeWriter = new GeneratedReadmeWriter({
         path:{
-          absoluteOrCwdJoin(path:string){
-            return `absoluteOrCwdJoin/${path}`;
-          },
           relative(from:string,to:string){
             return `${from}:${to}`
-          }
+          },
+          
         },
-        fs:{
-          writeFileString
-        }
+        cwd:'CWD'
       } as any,readmeFileNameOrPath);
 
       const relativeToReadme = generatedReadmeWriter.getRelativePath('to somewhere');
-      expect(relativeToReadme).toBe('absoluteOrCwdJoin/readmeFileNameOrPath:to somewhere');
+      expect(relativeToReadme).toBe('CWD:to somewhere');
     })
   })
 })
