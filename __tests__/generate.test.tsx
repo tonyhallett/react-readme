@@ -1,13 +1,12 @@
 import React from 'react';
 import generate from '../src/generate';
 import { ComponentInfo } from '../src/interfaces';
-import { AssetManager} from '../src/AssetManager';
+import { AssetManager} from '../src/asset-management/AssetManager';
 import { PuppeteerImageGeneratorWriter} from '../src/PuppeteerImageGeneratorWriter';
 import { GeneratedReadme} from '../src/GeneratedReadme';
 import { GeneratedReadmeWriter} from '../src/GeneratedReadmeWriter';
 import { createInstanceAndChangeMethods, createInstanceAndChangeMethod, create } from '../test-helpers/autoImportHelpers';
-import { LaunchOptions } from 'puppeteer';
-jest.mock('../src/AssetManager');
+jest.mock('../src/asset-management/AssetManager');
 jest.mock('../src/PuppeteerImageGeneratorWriter');
 jest.mock('../src/GeneratedReadme');
 jest.mock('../src/GeneratedReadmeWriter');
@@ -58,7 +57,7 @@ describe('generate', () => {
       )
       expect(getComponentInfos).toHaveBeenCalled();
     })
-    it('should generate and write the images images folder',async () => {
+    it('should generate and write the images folder',async () => {
       const puppeteerLaunchOptions = {} as any;
       const generateAndWrite = jest.fn();
       

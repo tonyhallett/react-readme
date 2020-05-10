@@ -1,16 +1,17 @@
 import generate from '../src/generate'
-import { AssetManager } from '../src/AssetManager'
-import { AssetFolderProvider } from '../src/AssetFolderProvider'
-import { AssetManagerOptions } from '../src/AssetManagerOptions'
+import { AssetManager } from '../src/asset-management/AssetManager'
+import { AssetFolderProvider } from '../src/asset-management/AssetFolderProvider'
+import { ResolvedObjectPathFinder } from '../src/asset-management/ResolvedObjectPathFinder'
+import { AssetManagerOptions } from '../src/asset-management/AssetManagerOptions'
 import { IRequirer, IPuppeteerImageGeneratorWriter, ImageDetails, CodeDetails, ReadmeImageType } from '../src/interfaces'
 import { SuffixComponentSorter } from '../src/SuffixComponentSorter'
 import { GeneratedReadme} from '../src/GeneratedReadme'
 import { GeneratedReadmeWriter} from '../src/GeneratedReadmeWriter'
-import { ReactReadme} from '../src/ReactReadme'
 import { System} from '../src/System' 
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { ComponentScreenshot } from '../src/PuppeteerImageGenerator'
+import { RequiringOptionsProvider } from '../src/asset-management/IOptionsProvider'
 jest.mock('../src/GeneratedReadme');
 
 describe('generate', () => {
@@ -428,12 +429,11 @@ describe('generate', () => {
             const system = new System();
             system.cwd = readmeAssetsFolder.cwd;
             const requirer = {require};
-            const reactReadme = new ReactReadme(system,requirer)
-            
+            const optionsProvider = new RequiringOptionsProvider(system, requirer, new ResolvedObjectPathFinder(require));
+            const assetManagerOptions = new AssetManagerOptions(system, optionsProvider.globalOptionsProvider);            
             const mockPuppeteerImageGenerator:IPuppeteerImageGeneratorWriter = {
               generateAndWrite
             }
-            const assetManagerOptions = new AssetManagerOptions(system, reactReadme);
             await assetManagerOptions.init();
 
             return generate(
@@ -442,7 +442,7 @@ describe('generate', () => {
                 new AssetFolderProvider(
                   system,
                   requirer,
-                  reactReadme,
+                  optionsProvider.globalOptionsProvider,
                   new SuffixComponentSorter()
                 ),
                 system

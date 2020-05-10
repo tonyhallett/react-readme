@@ -1,11 +1,11 @@
-import { ReactReadme } from '../src/ReactReadme';
+import { ReactReadmeRequirer } from '../src/ReactReadmeRequirer';
 
 describe('ReactReadme', () => {
   describe('exists', () => {
     [true,false].forEach((readmeExists)=> {
       it(`should look the folder for react-readme.js - ${readmeExists}`,async () => {
         const exists = jest.fn().mockReturnValue(Promise.resolve(readmeExists));
-        const reactReadme = new ReactReadme({
+        const reactReadme = new ReactReadmeRequirer({
           path:{
             join(...paths:string[]){
               return paths.join('/');
@@ -26,7 +26,7 @@ describe('ReactReadme', () => {
 
       }
       const require = jest.fn().mockReturnValue(readme);
-      const reactReadme = new ReactReadme({
+      const reactReadme = new ReactReadmeRequirer({
         path:{
           join(...paths:string[]){
             return paths.join('/');

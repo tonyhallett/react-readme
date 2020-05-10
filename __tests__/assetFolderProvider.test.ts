@@ -1,5 +1,5 @@
-import { ReadmeComponentScreenshotOptions, CodeReplacer, } from "../src/AssetManager"
-import { AssetFolderProvider, IComponentSorter, SortedComponentFolder} from "../src/AssetFolderProvider"
+import { ReadmeComponentScreenshotOptions, CodeReplacer, } from "../src/asset-management/AssetManager"
+import { AssetFolderProvider, IComponentSorter, SortedComponentFolder} from "../src/asset-management/AssetFolderProvider"
 import { CodeDetails } from "../src/interfaces";
 
 const noopSorter:IComponentSorter = {

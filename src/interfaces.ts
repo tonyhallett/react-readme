@@ -60,7 +60,8 @@ export interface Path{
   absoluteOrCwdJoin(path:string):string
 }
 export interface FS{
-  writeFile(path: string, data: string):Promise<void>
+  writeFileString(path: string, data: string):Promise<void>
+  writeFileBuffer(path: string, data: Buffer):Promise<void>
   emptyDir(path:string):Promise<void>
   readUntilExists(...paths:string[]):Promise<ReadUntilExistsResult>
   readdir(dir:string):Promise<string[]>
@@ -81,3 +82,4 @@ export interface IReactReadme{
   exists(folderPath:string):Promise<boolean>
   read<T extends object>(folderPath:string):T
 }
+

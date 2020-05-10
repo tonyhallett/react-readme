@@ -22,7 +22,8 @@ export class System implements ISystem{
     readFileString:(filePath:string) => readFileString(filePath),
     readUntilExists:(...paths:string[]) => readUntilExists(...paths),
     readdir:(dir:string) => fs.readdir(dir),
-    writeFile:(path:string,data:string) => fs.writeFile(path,data)
+    writeFileString:(path:string,data:string) => fs.writeFile(path,data),
+    writeFileBuffer:(path:string,data:Buffer) => fs.writeFile(path,data)
   }
   cwd = process.cwd()
 }

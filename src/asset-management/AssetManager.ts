@@ -1,5 +1,5 @@
-import { IAssetManager, ComponentInfo, ISystem, ReadmeImageType } from './interfaces';
-import { ComponentScreenshotOptions, ScreenshotType } from './PuppeteerImageGenerator';
+import { IAssetManager, ComponentInfo, ISystem, ReadmeImageType } from '../interfaces';
+import { ComponentScreenshotOptions, ScreenshotType } from '../PuppeteerImageGenerator';
 import puppeteer from 'puppeteer';
 
 export type CodeReplacer = {
@@ -32,7 +32,7 @@ export interface IAssetFolderProvider{
 
 
 
-export type FolderOptions = ComponentOptions&{componentPath?:string};
+export type FolderOptions = ComponentOptions&{componentPath?:string,component?:React.ComponentType};
 export interface ComponentInfoProvider<T={}>{
   getComponentInfos(readmeAssetsFolderPath:string,globalOptions:T&GlobalComponentOptions):Promise<ComponentInfo[]>
 }

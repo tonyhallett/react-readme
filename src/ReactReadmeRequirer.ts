@@ -2,7 +2,8 @@ import { IReactReadme } from "./interfaces";
 import { ISystem } from "./interfaces";
 import { IRequirer } from "./interfaces";
 
-export class ReactReadme implements IReactReadme{
+
+export class ReactReadmeRequirer implements IReactReadme{
   private readonly reactReadmeFile = 'react-readme.js'
   constructor(private readonly system:ISystem,private readonly requirer:IRequirer){}
 

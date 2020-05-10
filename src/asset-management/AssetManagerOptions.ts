@@ -1,15 +1,16 @@
 import { IAssetManagerOptions, ComponentOptions } from "./AssetManager";
 import { LaunchOptions } from 'puppeteer';
-import { ISystem, IReactReadme } from "./interfaces";
+import { ISystem } from "../interfaces";
+import { IGlobalOptionsProvider } from "./IOptionsProvider";
 
 
 type GlobalOptions = Partial<ComponentOptions>&{puppeteerLaunchOptions:LaunchOptions};
-type GlobalRootOptions = GlobalOptions & {readmeAssetsFolderPath?:string}
+export type GlobalRootOptions = GlobalOptions & {readmeAssetsFolderPath?:string}
 
 export class AssetManagerOptions implements IAssetManagerOptions {
   puppeteerLaunchOptions:LaunchOptions|undefined
   readmeAssetsFolderPath!: string;
-  constructor(private readonly system:ISystem,private readonly reactReadme:IReactReadme){}
+  constructor(private readonly system:ISystem,private readonly optionsProvider:IGlobalOptionsProvider){}
   globalComponentOptions: Partial<ComponentOptions>|undefined;
   private options:GlobalRootOptions|undefined;
   
@@ -27,17 +28,15 @@ export class AssetManagerOptions implements IAssetManagerOptions {
     }
   }
   private async setOptionsAndReadmeAssetsFolderPath():Promise<void>{
-    if(await this.reactReadme.exists(this.system.cwd)){
-      const globalRootOptions = this.reactReadme.read<GlobalRootOptions>(this.system.cwd);
-      this.options = globalRootOptions;
-      if(globalRootOptions.readmeAssetsFolderPath){
-        this.readmeAssetsFolderPath=this.system.path.absoluteOrCwdJoin(globalRootOptions.readmeAssetsFolderPath);
+    const globalOptions = await this.optionsProvider.getOptions(this.system.cwd);
+    if(globalOptions){
+      this.options = globalOptions;
+      if(globalOptions.readmeAssetsFolderPath){
+        this.readmeAssetsFolderPath=this.system.path.absoluteOrCwdJoin(globalOptions.readmeAssetsFolderPath);
       }
     }else{
       this.fallbackDefaultReadmeAssetsFolderName();
-      if(await this.reactReadme.exists(this.readmeAssetsFolderPath)){
-        this.options = this.reactReadme.read<GlobalOptions>(this.readmeAssetsFolderPath);
-      }
+      this.options = await this.optionsProvider.getOptions(this.readmeAssetsFolderPath)
     }
     this.fallbackDefaultReadmeAssetsFolderName();
   }

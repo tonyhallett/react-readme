@@ -1,6 +1,4 @@
-import { CodeDetails, ComponentInfo, ISystem } from './interfaces';
-import { IRequirer } from './interfaces';
-import { IReactReadme } from './interfaces';
+import { CodeDetails, ComponentInfo, ISystem , IRequirer, IReactReadme} from '../interfaces';
 import { IAssetFolderProvider, FolderOptions, GlobalComponentOptions, CodeReplacer, ReadmeComponentScreenshotOptions } from './AssetManager';
 
 export interface IAssetFolderComponentInfoProvider<T extends GlobalComponentOptions=any>{
@@ -10,6 +8,10 @@ export interface IAssetFolderComponentInfoProvider<T extends GlobalComponentOpti
 export interface SortedComponentFolder{componentFolderName:string,parsedName:string}
 export interface IComponentSorter{
   sort(componentFolderNames:string[]):Array<SortedComponentFolder>
+}
+
+export interface IComponentFolderOptionsProvider{
+  getOptions(componentFolderPath:string):Promise<FolderOptions|undefined>
 }
 
 export class AssetFolderProvider implements IAssetFolderProvider {
@@ -35,7 +37,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
   constructor(
     private readonly system: ISystem, 
     private readonly requirer: IRequirer, 
-    private readonly reactReadMe: IReactReadme, 
+    private readonly componentFolderOptionsProvider: IComponentFolderOptionsProvider, 
     private readonly componentSorter: IComponentSorter) { }
   registerAssetFolderProviders(...providers: IAssetFolderComponentInfoProvider[]):void {
     this.providers = providers;
@@ -47,16 +49,11 @@ export class AssetFolderProvider implements IAssetFolderProvider {
   private generateComponentInfosForProps(componentAssetFolder: string, folderOptions: FolderOptions): Promise<ComponentInfo[]> {
     throw new Error();
   }
-  private async getFolderOptions(componentAssetFolder: string): Promise<FolderOptions | undefined> {
-    if (await this.reactReadMe.exists(componentAssetFolder)) {
-      return this.reactReadMe.read<FolderOptions>(componentAssetFolder);
-    }
-    return Promise.resolve(undefined);
-  }
+  
   private async getMergedOptions(componentAssetFolderPath: string): Promise<FolderOptions> {
-    const folderOptions = await this.getFolderOptions(componentAssetFolderPath);
+    const folderOptions = await this.componentFolderOptionsProvider.getOptions(componentAssetFolderPath);
     // todo - for a moment
-    return { ...this.globalOptions, ...(folderOptions ? folderOptions : {}) };
+    return { ...this.globalOptions, ...folderOptions };
   }
   //not doing module resolution yet - so they must have file path
   private getAbsolutePathToJs(componentAssetFolderPath: string, jsPath: string): string {
@@ -207,7 +204,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
       language
     };
   }
-  getComponentScreenshot(componentPath: string, screenshotOptions: ReadmeComponentScreenshotOptions | undefined, exportProperty = 'default'): Pick<import("./PuppeteerImageGenerator").Options<{}>, "css" | "webfont" | "type" | "width" | "height" | "props"> & {
+  getComponentScreenshot(componentPath: string, screenshotOptions: ReadmeComponentScreenshotOptions | undefined, exportProperty = 'default'): Pick<import("../PuppeteerImageGenerator").Options<{}>, "css" | "webfont" | "type" | "width" | "height" | "props"> & {
     type?: "jpeg" | "png" | undefined;
   } & {
     Component: import("react").ComponentType<{}>;

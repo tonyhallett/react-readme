@@ -1,4 +1,4 @@
-import {AssetManager, IAssetFolderProvider, ComponentInfoProvider} from '../src/AssetManager'
+import {AssetManager, IAssetFolderProvider, ComponentInfoProvider} from '../src/asset-management/AssetManager'
 import { IAssetManager } from '../src/interfaces';
 
 describe('AssetManager', () => {
