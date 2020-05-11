@@ -3,7 +3,7 @@ import { ComponentScreenshot } from '../src/PuppeteerImageGenerator';
 
 describe('PuppeteerImageGeneratorWriter generateAndWrite', () => {
   it('should call the generator with the arguments', async () => {
-    const mockGenerator = jest.fn().mockReturnValue(Promise.resolve([]));
+    const mockGenerator = jest.fn().mockResolvedValue([]);
     const puppeteerImageGeneratorWriter = new PuppeteerImageGeneratorWriter(mockGenerator, null as any);
     const componentScreenshots:Array<ComponentScreenshot> = [];
     const puppeteerLaunchOptions = {};
@@ -23,8 +23,8 @@ describe('PuppeteerImageGeneratorWriter generateAndWrite', () => {
         id:'2'
       }
     ]
-    const mockGenerator = jest.fn().mockReturnValue(Promise.resolve(mockResults))
-    const writeFileBuffer=jest.fn().mockReturnValue(Promise.resolve());
+    const mockGenerator = jest.fn().mockResolvedValue(mockResults);
+    const writeFileBuffer=jest.fn().mockResolvedValue('');
     const puppeteerImageGeneratorWriter = new PuppeteerImageGeneratorWriter(mockGenerator,{
       fs:{
         writeFileBuffer

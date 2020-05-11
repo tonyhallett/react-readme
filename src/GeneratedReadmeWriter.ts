@@ -8,7 +8,9 @@ export class GeneratedReadmeWriter implements IGeneratedReadmeWriter {
   write(readme: IGeneratedReadme):Promise<void> {
     return this.system.fs.writeFileString(this.system.path.join(this.system.cwd,this.readmeFileName),readme.toString());
   }
-  static create(system:ISystem){
-    return new GeneratedReadmeWriter(system,'README.md');
-  }
+  
+}
+
+export function createGeneratedReadmeWriter(system:ISystem){
+  return new GeneratedReadmeWriter(system,'README.md');
 }

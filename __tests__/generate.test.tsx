@@ -39,7 +39,7 @@ describe('generate', () => {
   })
   describe('asset manager component infos', () => {
     it('should get the component infos from the asset manager', async () => {
-      const getComponentInfos= jest.fn().mockReturnValue(Promise.resolve([]));
+      const getComponentInfos= jest.fn().mockResolvedValue([]);
       await generate(
         {
           cleanComponentImages(){},
@@ -156,7 +156,7 @@ describe('generate', () => {
       let generatedReadme:GeneratedReadme
       beforeEach(async ()=>{
         const assetManager = create(MockAssetManager);
-        assetManager.getComponentInfos = jest.fn().mockReturnValue(Promise.resolve(componentInfos));
+        assetManager.getComponentInfos = jest.fn().mockResolvedValue(componentInfos);
         assetManager.getComponentImagePath = jest.fn(image => `readme-assets/images/${image}`);
         
         generatedReadme = create(MockGeneratedReadme);

@@ -1,4 +1,4 @@
-import { GeneratedReadmeWriter } from '../src/GeneratedReadmeWriter'
+import { GeneratedReadmeWriter, createGeneratedReadmeWriter } from '../src/GeneratedReadmeWriter'
 describe('GeneratedReadMeWriter', () => {
   describe('write', () => {
     
@@ -23,10 +23,10 @@ describe('GeneratedReadMeWriter', () => {
       expect(writeFileString).toHaveBeenCalledWith('CWD/readmeFileName','Generated read me');
     })
 
-    describe('GeneratedReadMeWriter.create',() => {
+    describe('createGeneratedReadmeWriter',() => {
       it('should write GeneratedReadme toString to cwd/README.md', async () => {
         const writeFileString = jest.fn().mockResolvedValue(undefined);
-        const generatedReadmeWriter = GeneratedReadmeWriter.create({
+        const generatedReadmeWriter = createGeneratedReadmeWriter({
           path:{
             join:(...paths:string[])=> paths.join('/'),
             relative(from:string,to:string){

@@ -30,7 +30,7 @@ describe('AssetFolderProvider', () => {
       const componentInfo5 = {mock:'info3'};
       const componentInfo6 = {mock:'info4'};
       const registered = jest.fn().mockReturnValue([componentInfo1, componentInfo2]);
-      const own = jest.fn().mockReturnValue(Promise.resolve([[componentInfo3, componentInfo4],[componentInfo5, componentInfo6]]));
+      const own = jest.fn().mockResolvedValue([[componentInfo3, componentInfo4],[componentInfo5, componentInfo6]]);
       assetFolderProvider['getOwnComponentInfos'] = own;
       assetFolderProvider.registerAssetFolderProviders({
         getComponentInfos:registered
@@ -74,7 +74,7 @@ describe('AssetFolderProvider', () => {
         });
         const componentInfo1 = {mock:'info1'};
         const componentInfo2 = {mock:'info2'};
-        const getComponentInfosForFolder = jest.fn().mockReturnValueOnce(Promise.resolve([componentInfo1])).mockReturnValueOnce([componentInfo2]);
+        const getComponentInfosForFolder = jest.fn().mockResolvedValueOnce([componentInfo1]).mockResolvedValueOnce([componentInfo2]);
         assetFolderProvider['getComponentInfosForFolder'] = getComponentInfosForFolder;
 
         const res = await assetFolderProvider.getComponentInfos('readme-assets/components',{});
@@ -94,8 +94,8 @@ describe('AssetFolderProvider', () => {
       describe('does not have props -  [ComponentInfo]', () => {
         describe('component readme', () => {
           it('should have read component readme from component folder in props',async () => {
-            const readComponentReadMe = jest.fn().mockReturnValue(Promise.resolve('some readme'));
-            const hasProps = jest.fn().mockReturnValue(Promise.resolve(false));
+            const readComponentReadMe = jest.fn().mockResolvedValue('some readme');
+            const hasProps = jest.fn().mockResolvedValue(false);
             const assetFolderProvider = new AssetFolderProvider({
               path:{
                 join(...paths:string[]){return paths.join('/')}
@@ -115,8 +115,8 @@ describe('AssetFolderProvider', () => {
           })
           describe('readComponentReadMe', () => {
             it('should read README.md if it exists', async () => {
-             const exists=jest.fn().mockReturnValue(Promise.resolve(true));
-             const readFileString = jest.fn().mockReturnValue(Promise.resolve('some read me'));
+             const exists=jest.fn().mockResolvedValue(true);
+             const readFileString = jest.fn().mockResolvedValue('some read me');
              const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider({
                 path:{
                   join(...paths:string[]){
@@ -137,7 +137,7 @@ describe('AssetFolderProvider', () => {
               })
             })
             it('should return empty string if README.md does not exist',async () => {
-              const exists=jest.fn().mockReturnValue(Promise.resolve(false));
+              const exists=jest.fn().mockResolvedValue(false);
               const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider({
                   path:{
                     join(...paths:string[]){
@@ -161,7 +161,7 @@ describe('AssetFolderProvider', () => {
               some:'prop'
             }
             const getComponentScreenshot = jest.fn().mockReturnValue(componentScreenshot)
-            const hasProps = jest.fn().mockReturnValue(Promise.resolve(false));
+            const hasProps = jest.fn().mockResolvedValue(false);
             const assetFolderProvider = new AssetFolderProvider({
               path:{
                 join(...paths:string[]){return paths.join('/')}
@@ -194,7 +194,7 @@ describe('AssetFolderProvider', () => {
                 }
               } as any,{
                 require
-              },{} as any,noopSorter)
+              } as any,{} as any,noopSorter)
               const readmeComponentScreenshotOptions:ReadmeComponentScreenshotOptions = {
                 css:'css',
                 height:1,
@@ -216,8 +216,8 @@ describe('AssetFolderProvider', () => {
         describe('component code', () => {
           it('should have the component code in properties', async () => {
             const componentCode:CodeDetails = {code:'some code',language:'language'}
-            const getComponentCode=jest.fn().mockReturnValue(Promise.resolve(componentCode))
-            const hasProps = jest.fn().mockReturnValue(Promise.resolve(false));
+            const getComponentCode=jest.fn().mockResolvedValue(componentCode);
+            const hasProps = jest.fn().mockResolvedValue(false);
             const assetFolderProvider = new AssetFolderProvider({
               path:{
                 join(...paths:string[]){return paths.join('/')}
@@ -247,11 +247,11 @@ describe('AssetFolderProvider', () => {
         
             it('should readUntilExists index.js if codeInReadMe is Js and replace', async () => {
               const codeReplacer = jest.fn().mockReturnValue('replaced');
-              const readUntilExists = jest.fn().mockReturnValue(Promise.resolve({
+              const readUntilExists = jest.fn().mockResolvedValue({
                 didRead:true,
                 read:'some js',
                 readPath:'readme-assets/components/Component/index.js'
-              }));
+              });
               const extname = jest.fn().mockReturnValue('.js')
               const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider({
                 path:{
@@ -276,9 +276,9 @@ describe('AssetFolderProvider', () => {
         
             it('should throw error if code is not found', () =>  {
               const codeReplacer = jest.fn().mockReturnValue('replaced');
-              const readUntilExists = jest.fn().mockReturnValue(Promise.resolve({
+              const readUntilExists = jest.fn().mockResolvedValue({
                 didRead:false,
-              }));
+              });
               const extname = jest.fn().mockReturnValue('.js')
               const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider({
                 path:{
@@ -297,11 +297,11 @@ describe('AssetFolderProvider', () => {
            
             it('should readUntilExists with preference order ts, tsx, js if codeInReadMe is not Js and replace', async() => {
               const codeReplacer = jest.fn().mockReturnValue('replaced');
-              const readUntilExists = jest.fn().mockReturnValue(Promise.resolve({
+              const readUntilExists = jest.fn().mockResolvedValue({
                 didRead:true,
                 read:'some ts',
                 readPath:'readme-assets/components/Component/component.ts'
-              }));
+              });
               const extname = jest.fn().mockReturnValue('.ts')
               const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider({
                 path:{
@@ -345,11 +345,11 @@ describe('AssetFolderProvider', () => {
               ]
               tests.forEach(test => {
                 it(`${test.description}`, async () => {
-                  const readUntilExists = jest.fn().mockReturnValue(Promise.resolve({
+                  const readUntilExists = jest.fn().mockResolvedValue({
                     didRead:true,
                     read:'This can be replaced',
                     readPath:'readme-assets/components/Component/component.ts'
-                  }));
+                  });
                   const extname = jest.fn().mockReturnValue('.ts')
                   const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider({
                     path:{
@@ -392,10 +392,10 @@ describe('AssetFolderProvider', () => {
         ]
         tests.forEach(test => {
           it(`${test.isAbsolute?'should use absolute for getComponentCode and getComponentScreenshot':'should be relative to component folder if not absolute'}`, async () => {
-            const getComponentCode = jest.fn().mockReturnValue(Promise.resolve());
-            const getComponentScreenshot = jest.fn().mockReturnValue(Promise.resolve());
+            const getComponentCode = jest.fn().mockResolvedValue('');
+            const getComponentScreenshot = jest.fn().mockResolvedValue('');
             const isAbsolute=jest.fn().mockReturnValue(test.isAbsolute)
-            const hasProps = jest.fn().mockReturnValue(Promise.resolve(false));
+            const hasProps = jest.fn().mockResolvedValue(false);
             const assetFolderProvider = new AssetFolderProvider({
               path:{
                 join(...paths:string[]){return paths.join('/')},

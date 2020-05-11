@@ -6,7 +6,7 @@ describe('AssetManagerOptions', () => {
       const options = {
         readmeAssetsFolderPath: 'some path'
       }
-      const getOptions =jest.fn().mockReturnValue(Promise.resolve(options));
+      const getOptions =jest.fn().mockResolvedValue(options);
       const assetManagerOptions = new AssetManagerOptions({
         cwd:'root',
         path:{
@@ -24,7 +24,7 @@ describe('AssetManagerOptions', () => {
     it('should be cwd/README-assets if no readmeAssetsFolderPath option on root', async () => {
       const options = {
       }
-      const getOptions =jest.fn().mockReturnValue(Promise.resolve(options));
+      const getOptions =jest.fn().mockResolvedValue(options);
       const assetManagerOptions = new AssetManagerOptions({
         cwd:'root',
         path:{
@@ -39,7 +39,7 @@ describe('AssetManagerOptions', () => {
 
     it('should be cwd/README-assets if no root', async () => {
       
-      const getOptions =jest.fn().mockReturnValue(Promise.resolve(undefined));
+      const getOptions =jest.fn().mockResolvedValue(undefined);
       const assetManagerOptions = new AssetManagerOptions({
         cwd:'root',
         path:{
@@ -60,7 +60,7 @@ describe('AssetManagerOptions', () => {
       const readOptions = {
         puppeteerLaunchOptions
       }
-      const getOptions =jest.fn().mockReturnValue(Promise.resolve(readOptions));
+      const getOptions =jest.fn().mockResolvedValue(readOptions);
       const assetManagerOptions = new AssetManagerOptions({
         cwd:'root',
         path:{
@@ -78,7 +78,7 @@ describe('AssetManagerOptions', () => {
       const readOptions = {
         puppeteerLaunchOptions
       }
-      const getOptions =jest.fn().mockReturnValueOnce(Promise.resolve(undefined)).mockReturnValueOnce(Promise.resolve(readOptions));
+      const getOptions =jest.fn().mockResolvedValueOnce(undefined).mockResolvedValueOnce(readOptions);
       const assetManagerOptions = new AssetManagerOptions({
         cwd:'root',
         path:{

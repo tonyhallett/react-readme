@@ -96,7 +96,7 @@ describe('AssetManager', () => {
   describe('getComponentInfos',()=>{
     it('should get from AssetFolderProvider passing componentAssetsFolder and options', async () => {
       const componentInfos = [ {mock:'componentinfo'}, {mock:'componentinfo2'}  ]
-      const getComponentInfos = jest.fn().mockReturnValue(Promise.resolve(componentInfos));
+      const getComponentInfos = jest.fn().mockResolvedValue(componentInfos);
       const options = {
         readmeAssetsFolderPath:'readme-assets',
         globalComponentOptions:{
@@ -126,7 +126,7 @@ describe('AssetManager', () => {
       const assetManager = new AssetManager(
         options as any,
         {
-          getComponentInfos:jest.fn().mockReturnValue(Promise.resolve(componentInfos))
+          getComponentInfos:jest.fn().mockResolvedValue(componentInfos)
         },
         {
           path:{
@@ -136,11 +136,11 @@ describe('AssetManager', () => {
       );
       const componentInfo1 = {mock:'componentinfoP'};
       const componentInfoProvider1:ComponentInfoProvider<any> = {
-        getComponentInfos:jest.fn().mockReturnValue(Promise.resolve(componentInfo1))
+        getComponentInfos:jest.fn().mockResolvedValue(componentInfo1)
       }
       const componentInfo2 = {mock:'componentinfoP2'};
       const componentInfoProvider2:ComponentInfoProvider<any> = {
-        getComponentInfos:jest.fn().mockReturnValue(Promise.resolve(componentInfo2))
+        getComponentInfos:jest.fn().mockResolvedValue(componentInfo2)
       }
       assetManager.registerComponentInfoProviders(componentInfoProvider1,componentInfoProvider2)
       const infos = await assetManager.getComponentInfos();

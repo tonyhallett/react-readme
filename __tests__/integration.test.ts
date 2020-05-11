@@ -1,9 +1,5 @@
 import generate from '../src/generate'
-import { AssetManager } from '../src/asset-management/AssetManager'
-import { AssetFolderProvider } from '../src/asset-management/AssetFolderProvider'
-import { ResolvedObjectPathFinder } from '../src/asset-management/ResolvedObjectPathFinder'
-import { AssetManagerOptions } from '../src/asset-management/AssetManagerOptions'
-import { IRequirer, IPuppeteerImageGeneratorWriter, ImageDetails, CodeDetails, ReadmeImageType } from '../src/interfaces'
+import { IPuppeteerImageGeneratorWriter, ImageDetails, CodeDetails, ReadmeImageType } from '../src/interfaces'
 import { SuffixComponentSorter } from '../src/SuffixComponentSorter'
 import { GeneratedReadme} from '../src/GeneratedReadme'
 import { GeneratedReadmeWriter} from '../src/GeneratedReadmeWriter'
@@ -11,7 +7,7 @@ import { System} from '../src/System'
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { ComponentScreenshot } from '../src/PuppeteerImageGenerator'
-import { RequiringOptionsProvider } from '../src/asset-management/RequiringOptionsProvider'
+import {createFolderRequiringAssetManager} from '../src/asset-management/FolderRequiringAssetManager'
 jest.mock('../src/GeneratedReadme');
 
 describe('generate', () => {
@@ -389,17 +385,17 @@ describe('generate', () => {
 
     
     
-    // a) Merging of options
+    // a) Merging of options / class elsewhere and code in readme
 
     const noPropsIntegrationTests:NoPropsIntegrationTest[] = [
-      //basicNoPropsTest,
-      //differentAssetsFolderTest,
-      //typescriptCodeTest, // ts over js is the default
+      basicNoPropsTest,
+      differentAssetsFolderTest,
+      typescriptCodeTest, // ts over js is the default
       preferJsGlobalTest, // global react-readme.js
       noCodeGenerationTestGlobal, // global
-      imageTypeJpegTest
-      //puppetterLaunchOptionsTest,
-      //cleansImagesTest
+      imageTypeJpegTest,
+      puppetterLaunchOptionsTest,
+      cleansImagesTest
       
     ]
 
@@ -424,29 +420,18 @@ describe('generate', () => {
           const mockGeneratedReadme= new (GeneratedReadme as any)();
           (mockGeneratedReadme.toString as any).mockReturnValue('Fake');
 
-          const generateAndWrite = jest.fn().mockReturnValue(Promise.resolve());
+          const generateAndWrite = jest.fn().mockResolvedValue('');
           async function fakeGenerate():Promise<void>{
             const system = new System();
             system.cwd = readmeAssetsFolder.cwd;
-            const requirer = {require};
-            const optionsProvider = new RequiringOptionsProvider(system, requirer, new ResolvedObjectPathFinder(require));
-            const assetManagerOptions = new AssetManagerOptions(system, optionsProvider.globalOptionsProvider);            
+            const requirer = {require} as any;
+            
             const mockPuppeteerImageGenerator:IPuppeteerImageGeneratorWriter = {
               generateAndWrite
             }
-            await assetManagerOptions.init();
-
+            
             return generate(
-              new AssetManager(
-                assetManagerOptions, 
-                new AssetFolderProvider(
-                  system,
-                  requirer,
-                  optionsProvider.globalOptionsProvider,
-                  new SuffixComponentSorter()
-                ),
-                system
-              ),
+              await createFolderRequiringAssetManager(system,requirer,new SuffixComponentSorter()),
               mockGeneratedReadme as any,
               new GeneratedReadmeWriter(system,generatedReadme),
               mockPuppeteerImageGenerator

@@ -12,7 +12,7 @@ describe('ResolvedObjectPathFinder getResolvedPath', () => {
         }
       }
     }
-    const resolvedObjectPathFinder = new ResolvedObjectPathFinder(fakeRequire as any);
+    const resolvedObjectPathFinder = new ResolvedObjectPathFinder({require:fakeRequire as any});
     expect(resolvedObjectPathFinder.getResolvedPath(resolvedObject)).toBe('the match');
   });
 
@@ -20,7 +20,7 @@ describe('ResolvedObjectPathFinder getResolvedPath', () => {
     const resolvedObject = {};
     const fakeRequire = ()=>{};
     fakeRequire.cache = undefined as any;
-    const resolvedObjectPathFinder = new ResolvedObjectPathFinder(fakeRequire as any);
+    const resolvedObjectPathFinder = new ResolvedObjectPathFinder({require:fakeRequire as any});
     expect(resolvedObjectPathFinder.getResolvedPath(resolvedObject)).toBeUndefined();
   })
 
@@ -30,7 +30,7 @@ describe('ResolvedObjectPathFinder getResolvedPath', () => {
     fakeRequire.cache = {
       'not a match':{exports:{prop:{}}},
     }
-    const resolvedObjectPathFinder = new ResolvedObjectPathFinder(fakeRequire as any);
+    const resolvedObjectPathFinder = new ResolvedObjectPathFinder({require:fakeRequire as any});
     expect(resolvedObjectPathFinder.getResolvedPath(resolvedObject)).toBeUndefined();
   });
 
@@ -40,7 +40,7 @@ describe('ResolvedObjectPathFinder getResolvedPath', () => {
     fakeRequire.cache = {
       'not a match':undefined,
     }
-    const resolvedObjectPathFinder = new ResolvedObjectPathFinder(fakeRequire as any);
+    const resolvedObjectPathFinder = new ResolvedObjectPathFinder({require:fakeRequire as any});
     expect(resolvedObjectPathFinder.getResolvedPath(resolvedObject)).toBeUndefined();
   })
 })

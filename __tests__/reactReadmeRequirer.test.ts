@@ -4,7 +4,7 @@ describe('ReactReadme', () => {
   describe('exists', () => {
     [true,false].forEach((readmeExists)=> {
       it(`should look the folder for react-readme.js - ${readmeExists}`,async () => {
-        const exists = jest.fn().mockReturnValue(Promise.resolve(readmeExists));
+        const exists = jest.fn().mockResolvedValue(readmeExists);
         const reactReadme = new ReactReadmeRequirer({
           path:{
             join(...paths:string[]){
@@ -34,7 +34,7 @@ describe('ReactReadme', () => {
         }
       } as any,{
         require
-      });
+      } as any);
       const read = await reactReadme.read('someFolder');
       expect(read).toBe(readme);
       expect(require).toHaveBeenCalledWith('someFolder/react-readme.js');

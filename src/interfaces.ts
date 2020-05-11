@@ -75,7 +75,7 @@ export interface ISystem {
 }
 
 export interface IRequirer{
-  require(id: string): any;
+  require:NodeRequire//(id: string): any;
 }
 
 export interface IReactReadme{
