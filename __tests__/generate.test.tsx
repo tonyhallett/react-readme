@@ -14,7 +14,7 @@ jest.mock('../src/GeneratedReadmeWriter');
 const MockAssetManager = AssetManager as jest.MockedClass<typeof AssetManager>;
 const MockGeneratedReadmeWriter = GeneratedReadmeWriter as jest.MockedClass<typeof GeneratedReadmeWriter>;
 const MockPuppeteerImageGeneratorWriter = PuppeteerImageGeneratorWriter as jest.MockedClass<typeof PuppeteerImageGeneratorWriter>;
-
+const MockGeneratedReadme = GeneratedReadme as jest.MockedClass<typeof GeneratedReadme>;
 describe('generate', () => {
   it('should clean component images',async () => {
     const cleanComponentImages= jest.fn();
@@ -159,7 +159,7 @@ describe('generate', () => {
         assetManager.getComponentInfos = jest.fn().mockReturnValue(Promise.resolve(componentInfos));
         assetManager.getComponentImagePath = jest.fn(image => `readme-assets/images/${image}`);
         
-        generatedReadme = new GeneratedReadme();
+        generatedReadme = create(MockGeneratedReadme);
 
         const generatedReadmeWriter = createInstanceAndChangeMethod(
           MockGeneratedReadmeWriter,

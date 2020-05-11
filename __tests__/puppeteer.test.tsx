@@ -3,7 +3,7 @@ import React from 'react';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
-describe('puppeteer generator', () => {
+describe.skip('puppeteer generator', () => {
   it('should not throw', async () => {
     const Component: React.FC = () =>{
       return <span>Hello</span>
@@ -11,7 +11,7 @@ describe('puppeteer generator', () => {
     await generateWithPuppeteer(Component,{});
   })
 
-  it.skip('should not throw with multiple', async () => {
+  it('should not throw with multiple', async () => {
     const Component: React.FC = () =>{
       return <span>Hello</span>
     }
@@ -31,16 +31,24 @@ describe('puppeteer generator', () => {
     const multiple:Array<ComponentScreenshot>=[
       {
         Component,
+        id:'1'
       },
       {
         Component,
         width:50,
-        height:50
+        height:50,
+        id:'2'
       },
       {
         Component,
         width:100,
-        height:100
+        height:100,
+        id:'3'
+      },
+      {
+        Component,
+        height:100,
+        id:'4'
       },
 
     ];

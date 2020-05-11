@@ -421,7 +421,7 @@ describe('generate', () => {
         }
 
         async function generateAndExpect(){
-          const mockGeneratedReadme= new GeneratedReadme();
+          const mockGeneratedReadme= new (GeneratedReadme as any)();
           (mockGeneratedReadme.toString as any).mockReturnValue('Fake');
 
           const generateAndWrite = jest.fn().mockReturnValue(Promise.resolve());

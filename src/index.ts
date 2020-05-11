@@ -12,6 +12,8 @@ import { SuffixComponentSorter } from "./SuffixComponentSorter";
 import { ResolvedObjectPathFinder } from "./asset-management/ResolvedObjectPathFinder";
 import { IOptionsProvider } from "./asset-management/IOptionsProvider";
 import { RequiringOptionsProvider } from "./asset-management/RequiringOptionsProvider";
+import { markdownCodeCreator, createMarkdownImageCreator } from "./GeneratedReadme/readMePartCreators";
+import { newlineSpacer } from "./GeneratedReadme/newlineSpacer";
 
 export const generateReadme = async () => {
   const system = new System();
@@ -28,7 +30,14 @@ export const generateReadme = async () => {
         optionsProvider.componentFolderOptionsProvider,
         new SuffixComponentSorter()),
       system),
-    new GeneratedReadme(),
+    new GeneratedReadme(
+      markdownCodeCreator,
+      createMarkdownImageCreator({
+        encodeURI,
+        encodeURIComponent
+      }),
+      newlineSpacer
+    ),
     new GeneratedReadmeWriter(system,'README.md'),
     new PuppeteerImageGeneratorWriter(generateMultipleWithPuppeteer,system)
   )
