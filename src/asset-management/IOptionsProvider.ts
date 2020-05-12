@@ -6,6 +6,6 @@ export interface IOptionsProvider{
     globalOptionsProvider:IGlobalOptionsProvider
 }
 export interface IGlobalOptionsProvider{
-  getOptions(folderPath:string):Promise<GlobalRootOptions|undefined>
+  getOptions(folderPath:string):Promise<GlobalRootOptions>
 }
 

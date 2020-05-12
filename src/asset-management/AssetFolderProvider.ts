@@ -1,8 +1,8 @@
 import { CodeDetails, ComponentInfo, ISystem , IRequirer, IReactReadme, ComponentInfoScreenshotOptions} from '../interfaces';
-import { IAssetFolderProvider, FolderOptions, GlobalComponentOptions, CodeReplacer, ReadmeComponentScreenshotOptions } from './AssetManager';
+import { IAssetFolderProvider, ComponentOptions, GlobalComponentOptions, CodeReplacer, ReadmeComponentScreenshotOptions } from './AssetManager';
 
-export interface IAssetFolderComponentInfoProvider<T extends GlobalComponentOptions=any>{
-  getComponentInfos(componentAssetsFolder: string, globalOptions: T): Promise<ComponentInfo[]>
+export interface IAssetFolderComponentInfoProvider<T=any>{
+  getComponentInfos(componentAssetsFolder: string, globalOptions: T&GlobalComponentOptions): Promise<ComponentInfo[]>
 }
 
 export interface SortedComponentFolder{componentFolderName:string,parsedName:string}
@@ -11,7 +11,7 @@ export interface IComponentSorter{
 }
 
 export interface IComponentFolderOptionsProvider{
-  getOptions(componentFolderPath:string):Promise<FolderOptions|undefined>
+  getOptions(componentFolderPath:string):Promise<ComponentOptions|undefined>
 }
 
 export class AssetFolderProvider implements IAssetFolderProvider {
@@ -46,13 +46,12 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     return await this.system.path.exists(this.system.path.join(componentAssetFolder, 'props.js')) ||
       await this.system.path.exists(this.system.path.join(componentAssetFolder, 'props'));
   }
-  private generateComponentInfosForProps(componentAssetFolder: string, folderOptions: FolderOptions): Promise<ComponentInfo[]> {
+  private generateComponentInfosForProps(componentAssetFolder: string, componentOptions: ComponentOptions): Promise<ComponentInfo[]> {
     throw new Error();
   }
   
-  private async getMergedOptions(componentAssetFolderPath: string): Promise<FolderOptions> {
+  private async getMergedOptions(componentAssetFolderPath: string): Promise<ComponentOptions> {
     const folderOptions = await this.componentFolderOptionsProvider.getOptions(componentAssetFolderPath);
-    // todo - for a moment
     return { ...this.globalOptions, ...folderOptions };
   }
   private getAbsolutePathToJs(componentAssetFolderPath: string, jsPath: string): string {
@@ -70,7 +69,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     const componentPath = mergedFolderOptions && mergedFolderOptions.componentPath ? this.getAbsolutePathToJs(componentAssetFolderPath, mergedFolderOptions.componentPath) :
       this.system.path.join(componentAssetFolderPath, 'index.js');
     const codeDetails = await this.getComponentCode(componentPath, mergedFolderOptions.codeInReadme, mergedFolderOptions.codeReplacer);
-    const componentScreenshot = this.getComponentScreenshot(componentPath, mergedFolderOptions.screenshotOptions);
+    const componentScreenshot = this.getComponentScreenshot(componentPath, mergedFolderOptions.screenshotOptions,mergedFolderOptions.componentKey);
     const componentInfo: ComponentInfo = {
       codeDetails,
       readme,
@@ -203,8 +202,9 @@ export class AssetFolderProvider implements IAssetFolderProvider {
       language
     };
   }
-  getComponentScreenshot(componentPath: string, screenshotOptions: ReadmeComponentScreenshotOptions | undefined, exportProperty = 'default'): ComponentInfoScreenshotOptions {
-    const Component = this.requirer.require(componentPath)[exportProperty];
+  getComponentScreenshot(componentPath: string, screenshotOptions: ReadmeComponentScreenshotOptions | undefined, key:string|undefined): ComponentInfoScreenshotOptions {
+    const required = this.requirer.require(componentPath);
+    const Component = key? required[key]:required;
     return {
       Component,
       ...screenshotOptions

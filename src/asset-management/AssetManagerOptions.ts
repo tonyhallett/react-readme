@@ -1,17 +1,16 @@
-import { IAssetManagerOptions, ComponentOptions } from "./AssetManager";
+import { IAssetManagerOptions, ComponentOptionsCommon, GlobalComponentOptions } from "./AssetManager";
 import { LaunchOptions } from 'puppeteer';
 import { ISystem } from "../interfaces";
 import { IGlobalOptionsProvider } from "./IOptionsProvider";
 
 
-type GlobalOptions = Partial<ComponentOptions>&{puppeteerLaunchOptions:LaunchOptions};
-export type GlobalRootOptions = GlobalOptions & {readmeAssetsFolderPath?:string}
+export type GlobalRootOptions =(ComponentOptionsCommon & {readmeAssetsFolderPath?:string}&{puppeteerLaunchOptions?:LaunchOptions})|undefined
 
 export class AssetManagerOptions implements IAssetManagerOptions {
-  private options:GlobalRootOptions|undefined;
+  private options:GlobalRootOptions;
   puppeteerLaunchOptions:LaunchOptions|undefined
   readmeAssetsFolderPath!: string;
-  globalComponentOptions: Partial<ComponentOptions>|undefined;
+  globalComponentOptions: GlobalComponentOptions;
   constructor(private readonly system:ISystem,private readonly optionsProvider:IGlobalOptionsProvider){}
   
   private fallbackDefaultReadmeAssetsFolderName():void{

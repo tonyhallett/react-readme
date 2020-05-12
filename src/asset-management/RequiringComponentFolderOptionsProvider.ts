@@ -1,17 +1,23 @@
 import { IComponentFolderOptionsProvider } from "./AssetFolderProvider";
 import { ReactReadmeRequirer } from "../ReactReadmeRequirer";
-import { FolderOptions } from "./AssetManager";
+import { ComponentOptions } from "./AssetManager";
 export interface IResolvedObjectPathFinder{
-  getResolvedPath(resolvedObject:any):string|undefined;
+  resolve(resolvedObject:any, exclude:string):{path:string,key:string|undefined}|undefined;
 }
 
 export class RequiringComponentFolderOptionsProvider implements IComponentFolderOptionsProvider{
   constructor(private readonly readmeRequirer:ReactReadmeRequirer, private readonly resolvedObjectPathFinder:IResolvedObjectPathFinder){}
-  async getOptions(componentFolderPath: string): Promise<FolderOptions | undefined> {
+  async getOptions(componentFolderPath: string): Promise<ComponentOptions | undefined> {
     if(await this.readmeRequirer.exists(componentFolderPath)){
-      const options = this.readmeRequirer.read<FolderOptions>(componentFolderPath);
+      const options = this.readmeRequirer.read<ComponentOptions>(componentFolderPath);
       if(options.component && options.componentPath === undefined){
-        options.componentPath = this.resolvedObjectPathFinder.getResolvedPath(options.component);
+        const resolved =  this.resolvedObjectPathFinder.resolve(
+          options.component,
+          this.readmeRequirer.getReactReadmeInFolder(componentFolderPath));
+        if(resolved){
+          options.componentPath = resolved.path;
+          options.componentKey = resolved.key;
+        }
       }
       return options;
     }

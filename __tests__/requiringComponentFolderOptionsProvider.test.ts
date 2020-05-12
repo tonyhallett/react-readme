@@ -27,10 +27,12 @@ describe('RequiringComponentFolderOptionsProvider getOptions', () => {
   })
 
   describe('component defined and componentPath undefined',  () => {
-    it('should get the path with the IResolvedObjectPathFinder', async () => {
-      const getResolvedPath = jest.fn().mockReturnValue('resolved object module path');
+    it('should get the path and key with the IResolvedObjectPathFinder excluding the componet folder and set on options', async () => {
+      const resolve = jest.fn().mockReturnValue({path:'resolved object module path',key:'exports key'});
 
       const exists = jest.fn().mockResolvedValue(true);
+      const exclude = 'component/react-readme.js';
+      const getReactReadmeInFolder = jest.fn().mockReturnValue(exclude);
       const reactReadmeRequiredOptions = {
         component:function SomeComponent(){}
       };
@@ -38,13 +40,15 @@ describe('RequiringComponentFolderOptionsProvider getOptions', () => {
 
       const requiringComponentFolderOptionsProvider = new RequiringComponentFolderOptionsProvider({
         exists,
-        read
+        read,
+        getReactReadmeInFolder
       } as any, {
-        getResolvedPath
+        resolve
       });
       const options = await requiringComponentFolderOptionsProvider.getOptions('');
-      expect(getResolvedPath).toHaveBeenCalledWith(reactReadmeRequiredOptions.component);
+      expect(resolve).toHaveBeenCalledWith(reactReadmeRequiredOptions.component,exclude);
       expect(options!.componentPath).toBe('resolved object module path');
+      expect(options!.componentKey).toBe('exports key');
     })
   })
 })
