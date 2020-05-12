@@ -7,7 +7,7 @@ export class PuppeteerImageGeneratorWriter implements IPuppeteerImageGeneratorWr
   async generateAndWrite(componentScreenshots: ComponentScreenshot<{}>[], puppeteerOptions?: LaunchOptions | undefined): Promise<void> {
     const results = await this.generator(componentScreenshots,puppeteerOptions);
     for(const result of results){
-      await  this.system.fs.writeFileBuffer(result.id,result.image);
+      await this.system.fs.writeFileBuffer(result.id,result.image);
     }
   }
 

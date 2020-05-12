@@ -11,7 +11,8 @@
     "test": "jest --no-cache",
     "test:cov": "jest --coverage --no-cache",
     "build": "npm run clean && node ./node_modules/typescript/bin/tsc",
-    "clean": "node scripts/clean.js"
+    "clean": "node scripts/clean.js",
+    "prepublish": "npm run build"
   },
   "author": "Tony Hallett",
   "license": "ISC",

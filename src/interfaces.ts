@@ -32,12 +32,13 @@ export interface IImageGeneratorFromFile{
   generate(imageGenerationDetails:Array<ImageGenerationDetail>):Promise<void>
 }
 export type ReadmeImageType = Exclude<ScreenshotType,'pdf'>
+export type ComponentInfoScreenshotOptions = ComponentScreenshotOptions&{type?:'jpeg'|'png'}& {Component:React.ComponentType}
 
 export interface ComponentInfo {
   codeDetails:CodeDetails
   readme:string,
   name:string,
-  componentScreenshot:ComponentScreenshotOptions&{type?:'jpeg'|'png'}& {Component:React.ComponentType}
+  componentScreenshot:ComponentInfoScreenshotOptions
 }
 
 export interface IAssetManager{

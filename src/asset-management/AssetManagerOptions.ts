@@ -8,20 +8,12 @@ type GlobalOptions = Partial<ComponentOptions>&{puppeteerLaunchOptions:LaunchOpt
 export type GlobalRootOptions = GlobalOptions & {readmeAssetsFolderPath?:string}
 
 export class AssetManagerOptions implements IAssetManagerOptions {
+  private options:GlobalRootOptions|undefined;
   puppeteerLaunchOptions:LaunchOptions|undefined
   readmeAssetsFolderPath!: string;
-  constructor(private readonly system:ISystem,private readonly optionsProvider:IGlobalOptionsProvider){}
   globalComponentOptions: Partial<ComponentOptions>|undefined;
-  private options:GlobalRootOptions|undefined;
+  constructor(private readonly system:ISystem,private readonly optionsProvider:IGlobalOptionsProvider){}
   
-  async init():Promise<void>{
-    await this.setOptionsAndReadmeAssetsFolderPath();
-    if(this.options){
-      this.puppeteerLaunchOptions = this.options.puppeteerLaunchOptions;
-      const {puppeteerLaunchOptions,readmeAssetsFolderPath,...other} = this.options; 
-      this.globalComponentOptions = other;
-    }
-  }
   private fallbackDefaultReadmeAssetsFolderName():void{
     if(!this.readmeAssetsFolderPath){
       this.readmeAssetsFolderPath = this.system.path.absoluteOrCwdJoin('README-assets');
@@ -40,4 +32,14 @@ export class AssetManagerOptions implements IAssetManagerOptions {
     }
     this.fallbackDefaultReadmeAssetsFolderName();
   }
+  
+  async init():Promise<void>{
+    await this.setOptionsAndReadmeAssetsFolderPath();
+    if(this.options){
+      this.puppeteerLaunchOptions = this.options.puppeteerLaunchOptions;
+      const {puppeteerLaunchOptions,readmeAssetsFolderPath,...other} = this.options; 
+      this.globalComponentOptions = other;
+    }
+  }
+  
 }

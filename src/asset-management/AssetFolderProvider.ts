@@ -1,4 +1,4 @@
-import { CodeDetails, ComponentInfo, ISystem , IRequirer, IReactReadme} from '../interfaces';
+import { CodeDetails, ComponentInfo, ISystem , IRequirer, IReactReadme, ComponentInfoScreenshotOptions} from '../interfaces';
 import { IAssetFolderProvider, FolderOptions, GlobalComponentOptions, CodeReplacer, ReadmeComponentScreenshotOptions } from './AssetManager';
 
 export interface IAssetFolderComponentInfoProvider<T extends GlobalComponentOptions=any>{
@@ -34,14 +34,14 @@ export class AssetFolderProvider implements IAssetFolderProvider {
       },
     ];
   private providers: IAssetFolderComponentInfoProvider[] = [];
+  private globalOptions!: GlobalComponentOptions;
+  private componentAssetsFolder!: string;
   constructor(
     private readonly system: ISystem, 
     private readonly requirer: IRequirer, 
     private readonly componentFolderOptionsProvider: IComponentFolderOptionsProvider, 
     private readonly componentSorter: IComponentSorter) { }
-  registerAssetFolderProviders(...providers: IAssetFolderComponentInfoProvider[]):void {
-    this.providers = providers;
-  }
+  
   private async hasProps(componentAssetFolder: string): Promise<boolean> {
     return await this.system.path.exists(this.system.path.join(componentAssetFolder, 'props.js')) ||
       await this.system.path.exists(this.system.path.join(componentAssetFolder, 'props'));
@@ -55,7 +55,6 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     // todo - for a moment
     return { ...this.globalOptions, ...folderOptions };
   }
-  //not doing module resolution yet - so they must have file path
   private getAbsolutePathToJs(componentAssetFolderPath: string, jsPath: string): string {
     if (this.system.path.isAbsolute(jsPath)) {
       return jsPath;
@@ -68,7 +67,6 @@ export class AssetFolderProvider implements IAssetFolderProvider {
       return this.generateComponentInfosForProps(componentAssetFolderPath, mergedFolderOptions);
     }
     const readme = await this.readComponentReadMe(componentAssetFolderPath);
-    // Current readme code is not looking for specific export.... 
     const componentPath = mergedFolderOptions && mergedFolderOptions.componentPath ? this.getAbsolutePathToJs(componentAssetFolderPath, mergedFolderOptions.componentPath) :
       this.system.path.join(componentAssetFolderPath, 'index.js');
     const codeDetails = await this.getComponentCode(componentPath, mergedFolderOptions.codeInReadme, mergedFolderOptions.codeReplacer);
@@ -88,8 +86,6 @@ export class AssetFolderProvider implements IAssetFolderProvider {
       const componentAssetFolder = this.system.path.join(this.componentAssetsFolder, orderedComponentAssetFolderName.componentFolderName);
       return this.getComponentInfosForFolder(componentAssetFolder, orderedComponentAssetFolderName.parsedName);
     }));
-    
-    
   }
   private joinComponentInfos(allComponentInfos: ComponentInfo[][]):ComponentInfo[]{
     let componentInfos: ComponentInfo[] = [];
@@ -98,8 +94,34 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     });
     return componentInfos;
   }
-  private globalOptions!: GlobalComponentOptions;
-  private componentAssetsFolder!: string;
+  private async readComponentCode(componentPath: string, javascript: boolean): Promise<CodeDetails> {
+    const languageLookup = javascript ? [this.languageLookup[2]] : this.languageLookup;
+    const prefix = componentPath.substr(0, componentPath.length - 3);
+    const { didRead, read, readPath } = await this.system.fs.readUntilExists(...languageLookup.map(entry => `${prefix}${entry.extension}`));
+    if (!didRead) {
+      throw new Error('no component file found');
+    }
+    return {
+      code: read!,
+      language: languageLookup.find(entry => entry.extension === this.system.path.extname(readPath!))!.language
+    };
+  }
+  private getCodeReplacer(codeReplacer: CodeReplacer | undefined):(code:string)=>string {
+    let replacer: (code: string) => string;
+    if (codeReplacer === undefined) {
+      replacer = code => code;
+    }
+    else {
+      if (typeof codeReplacer === 'function') {
+        replacer = codeReplacer;
+      }
+      else {
+        replacer = code => code.replace(codeReplacer.regex, codeReplacer.replace);
+      }
+    }
+    return replacer;
+  }
+  
   async getComponentInfos(componentAssetsFolder: string, globalOptions: GlobalComponentOptions): Promise<ComponentInfo[]> {
     const providersInfos = await Promise.all(this.providers.map(provider => {
       return provider.getComponentInfos(componentAssetsFolder, globalOptions);
@@ -163,33 +185,10 @@ export class AssetFolderProvider implements IAssetFolderProvider {
         ---
     */
   }
-  private async readComponentCode(componentPath: string, javascript: boolean): Promise<CodeDetails> {
-    const languageLookup = javascript ? [this.languageLookup[2]] : this.languageLookup;
-    const prefix = componentPath.substr(0, componentPath.length - 3);
-    const { didRead, read, readPath } = await this.system.fs.readUntilExists(...languageLookup.map(entry => `${prefix}${entry.extension}`));
-    if (!didRead) {
-      throw new Error('no component file found');
-    }
-    return {
-      code: read!,
-      language: languageLookup.find(entry => entry.extension === this.system.path.extname(readPath!))!.language
-    };
+  registerAssetFolderProviders(...providers: IAssetFolderComponentInfoProvider[]):void {
+    this.providers = providers;
   }
-  private getCodeReplacer(codeReplacer: CodeReplacer | undefined):(code:string)=>string {
-    let replacer: (code: string) => string;
-    if (codeReplacer === undefined) {
-      replacer = code => code;
-    }
-    else {
-      if (typeof codeReplacer === 'function') {
-        replacer = codeReplacer;
-      }
-      else {
-        replacer = code => code.replace(codeReplacer.regex, codeReplacer.replace);
-      }
-    }
-    return replacer;
-  }
+  
   async getComponentCode(componentPath: string, codeInReadme: "None" | "Js" | undefined, codeReplacer: CodeReplacer | undefined): Promise<CodeDetails> {
     if (codeInReadme === 'None') {
       const noCodeDetails: CodeDetails = {
@@ -204,11 +203,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
       language
     };
   }
-  getComponentScreenshot(componentPath: string, screenshotOptions: ReadmeComponentScreenshotOptions | undefined, exportProperty = 'default'): Pick<import("../PuppeteerImageGenerator").Options<{}>, "css" | "webfont" | "type" | "width" | "height" | "props"> & {
-    type?: "jpeg" | "png" | undefined;
-  } & {
-    Component: import("react").ComponentType<{}>;
-  } {
+  getComponentScreenshot(componentPath: string, screenshotOptions: ReadmeComponentScreenshotOptions | undefined, exportProperty = 'default'): ComponentInfoScreenshotOptions {
     const Component = this.requirer.require(componentPath)[exportProperty];
     return {
       Component,

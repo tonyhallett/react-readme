@@ -10,6 +10,12 @@ describe.skip('puppeteer generator', () => {
     }
     await generateWithPuppeteer(Component,{});
   })
+  it('should not throw with undefined options', async () => {
+    const Component: React.FC = () =>{
+      return <span>Hello</span>
+    }
+    await generateWithPuppeteer(Component,{puppeteer:undefined});
+  })
 
   it('should not throw with multiple', async () => {
     const Component: React.FC = () =>{

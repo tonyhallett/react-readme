@@ -39,9 +39,8 @@ export interface ComponentInfoProvider<T={}>{
 
 export class AssetManager implements IAssetManager {
   private readmeAssetsFolderPath!: string;
-  
-  
   private componentImagesFolderPath!: string;
+  private componentInfoProviders:ComponentInfoProvider<any>[] = [];
   puppeteerLaunchOptions:puppeteer.LaunchOptions|undefined;
   constructor(
     private readonly options:IAssetManagerOptions,
@@ -55,13 +54,14 @@ export class AssetManager implements IAssetManager {
       this.componentImagesFolderPath = this.pathInReadmeAssetsFolder('images'); 
       this.puppeteerLaunchOptions = options.puppeteerLaunchOptions;
   }
-  private componentInfoProviders:ComponentInfoProvider<any>[] = [];
-  registerComponentInfoProviders(...componentInfoProviders:ComponentInfoProvider<any>[]):void{
-    this.componentInfoProviders = componentInfoProviders;
-  }
   
   private pathInReadmeAssetsFolder(path: string):string {
     return this.system.path.join(this.readmeAssetsFolderPath,path);
+  }
+  private getAssetFolderComponentInfos():Promise<ComponentInfo[]>{
+    // this could be an option
+    const componentAssetsFolder = this.pathInReadmeAssetsFolder('components');
+    return this.assetFolderProvider.getComponentInfos(componentAssetsFolder,this.options.globalComponentOptions);
   }
   
   async cleanComponentImages():Promise<void> {
@@ -84,9 +84,8 @@ export class AssetManager implements IAssetManager {
     }
     return componentInfos;
   }
-  private getAssetFolderComponentInfos():Promise<ComponentInfo[]>{
-    //this could be an option
-    const componentAssetsFolder = this.pathInReadmeAssetsFolder('components');
-    return this.assetFolderProvider.getComponentInfos(componentAssetsFolder,this.options.globalComponentOptions);
+  registerComponentInfoProviders(...componentInfoProviders:ComponentInfoProvider<any>[]):void{
+    this.componentInfoProviders = componentInfoProviders;
   }
+  
 }

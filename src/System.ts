@@ -27,5 +27,3 @@ export class System implements ISystem{
   }
   cwd = process.cwd()
 }
-
-

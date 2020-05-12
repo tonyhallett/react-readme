@@ -20,3 +20,4 @@ export async function createFolderRequiringAssetManager(system:ISystem,requirer:
     system)
   return assetManager;
 }
+

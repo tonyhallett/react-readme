@@ -66,10 +66,7 @@ export class GeneratedReadme implements IGeneratedReadme {
     private readonly markdownCodeCreator:MarkdownCodeCreator,
     private readonly markdownImageCreator:MarkdownImageCreator,
     private readonly newlineSpacer:NewlineSpacer
-    ){
-
-      //could have in ctor createAddEntries that would reorder the parts
-    }
+    ){}
 
   private addEntries(...readmePartCreators:Array<()=>string|undefined>){
     const componentReadmeEntries:string[]=[];

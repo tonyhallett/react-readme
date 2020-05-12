@@ -1,5 +1,5 @@
 import { ReadmeComponentScreenshotOptions, CodeReplacer, } from "../src/asset-management/AssetManager"
-import { AssetFolderProvider, IComponentSorter, SortedComponentFolder} from "../src/asset-management/AssetFolderProvider"
+import { AssetFolderProvider, IComponentSorter, SortedComponentFolder, IComponentFolderOptionsProvider} from "../src/asset-management/AssetFolderProvider"
 import { CodeDetails } from "../src/interfaces";
 
 const noopSorter:IComponentSorter = {
@@ -154,7 +154,6 @@ describe('AssetFolderProvider', () => {
           })
         })
 
-        
         describe('screenshot options', () => {
           it('should have property determined by the component path and merged screenshot options', async () => {
             const componentScreenshot = {
@@ -370,6 +369,42 @@ describe('AssetFolderProvider', () => {
               
             })
           })
+        })
+
+        it('should merge options from the provider with the global options', async () => {
+          const optionsProvider:IComponentFolderOptionsProvider = {
+            getOptions(path){
+              return Promise.resolve({
+                aFolderOption:'',
+                codeInReadme:'Js'
+              } as any)
+            }
+          }
+          const assetFolderProvider = new AssetFolderProvider({
+            fs:{
+              readdir:()=>Promise.resolve(['Component'])
+            },
+            path:{
+              join(...paths:string[]){
+                return paths.join('/');
+              }
+            }
+          } as any,
+          undefined as any,
+          optionsProvider,
+          {
+            sort:(folderNames:string[])=>[{componentFolderName:'',parsedName:''}]
+          }
+          );
+
+          assetFolderProvider.getComponentScreenshot = ()=> ({} as any);
+          assetFolderProvider['hasProps'] =()=>Promise.resolve(true);
+          const generateComponentInfosForProps = jest.fn().mockResolvedValue([]);
+          assetFolderProvider['generateComponentInfosForProps'] = generateComponentInfosForProps
+
+          const globalCodeReplacer:CodeReplacer = code => code;
+          await assetFolderProvider.getComponentInfos('',{codeInReadme:'None',codeReplacer:globalCodeReplacer});
+          expect(generateComponentInfosForProps.mock.calls[0][1]).toEqual({aFolderOption:'',codeReplacer:globalCodeReplacer,codeInReadme:'Js'})
         })
       })
         
