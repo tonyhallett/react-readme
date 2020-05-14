@@ -3,6 +3,15 @@ import fs = require("fs");
 import path = require("path");
 
 describe('parsing typescript ( tsx )', () => {
+  function isPropertyAssignmentWithName(property:ts.ObjectLiteralElementLike, name:string):property is ts.PropertyAssignment{
+    return ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === name;
+  }
+  function isShorthandPropertyAssignmentWithName(property:ts.ObjectLiteralElementLike,name:string):property is ts.ShorthandPropertyAssignment{
+    return ts.isShorthandPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === name;
+  }
+  function isComponentType(kind:ts.SyntaxKind){
+    return kind=== ts.SyntaxKind.ClassExpression || kind === ts.SyntaxKind.FunctionExpression || kind === ts.SyntaxKind.ArrowFunction;
+  }
   function getModuleExportsEqualsObjectLiteralExpression(sourceFile:ts.SourceFile,isJs:boolean):ts.ObjectLiteralExpression|undefined{
     let moduleExportsEqualsObjectLiteralExpression:ts.ObjectLiteralExpression|undefined;
     const potentials = sourceFile!.statements.map(s=>{
@@ -52,7 +61,7 @@ describe('parsing typescript ( tsx )', () => {
         }
         
         if(!componentJustFound && props===undefined){
-          props = extractProps(property);
+          props = extractProps(property, typeChecker);
         }
         if(!!component && !!props){
           break;
@@ -65,46 +74,60 @@ describe('parsing typescript ( tsx )', () => {
       props
     }
   }
+  function getReferencedDeclaration(symbol:ts.Symbol|undefined){
+    if(symbol){
+      const declaration = symbol.declarations[0];
+      if(ts.isVariableDeclaration(declaration)){
+        return declaration.initializer;
+      }
+    }
+  }
+  function getReferencedComponent(symbol:ts.Symbol|undefined){
+    const declarationInitializer = getReferencedDeclaration(symbol);
+    if(declarationInitializer){
+      if(isComponentType(declarationInitializer.kind)){
+        return declarationInitializer.getText();
+      }
+    }
+  }
   function extractComponent(property:ts.ObjectLiteralElementLike,typeChecker:ts.TypeChecker|undefined):string|undefined{
     //export type ObjectLiteralElementLike = PropertyAssignment | ShorthandPropertyAssignment | SpreadAssignment | MethodDeclaration | AccessorDeclaration;
     let componentAsString:string|undefined;
-    if(ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === 'component'){
+    if(isPropertyAssignmentWithName(property,'component')){
         const componentInitializer = property.initializer;
 
         let initializerKind = componentInitializer.kind;
-        if(initializerKind === ts.SyntaxKind.ClassExpression || initializerKind === ts.SyntaxKind.FunctionExpression || initializerKind === ts.SyntaxKind.ArrowFunction){
+        if(isComponentType(initializerKind)){
           componentAsString = componentInitializer.getText();
         }else if(initializerKind === ts.SyntaxKind.Identifier && typeChecker){
           const variableSymbol = typeChecker.getSymbolAtLocation(componentInitializer);
-          if(variableSymbol){
-            const declaration = variableSymbol.declarations[0];
-            if(ts.isVariableDeclaration(declaration)){
-              //refactor
-              const declarationInitializer = declaration.initializer;
-              if(declarationInitializer){
-                initializerKind = declarationInitializer.kind;
-                if(initializerKind === ts.SyntaxKind.ClassExpression || initializerKind === ts.SyntaxKind.FunctionExpression || initializerKind === ts.SyntaxKind.ArrowFunction){
-                  componentAsString = declarationInitializer.getText();
-                }
-              }
-            }
-          }
+          componentAsString = getReferencedComponent(variableSymbol);
         }
     }else if(ts.isMethodDeclaration(property)){
       // just for now
       componentAsString = property.getText();
-    }else if(ts.isShorthandPropertyAssignment(property)){
-      // todo later
+    }else if(isShorthandPropertyAssignmentWithName(property,'component') && typeChecker){
+      const symbol = typeChecker.getShorthandAssignmentValueSymbol(property);
+      componentAsString = getReferencedComponent(symbol);
     }else if(ts.isSpreadAssignment(property)){
       // todo later
     }else if(ts.isGetAccessorDeclaration(property)){
-      // todo later
+      // no need for this
     }
     return componentAsString;
   }
-  function extractProps(property:ts.ObjectLiteralElementLike):ts.Expression|undefined{
-    if(ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === 'props'){
+  function extractProps(property:ts.ObjectLiteralElementLike,typeChecker?:ts.TypeChecker):ts.Expression|undefined{
+    if(isPropertyAssignmentWithName(property,'props')){
+      const initializer = property.initializer;
+      if(initializer.kind === ts.SyntaxKind.Identifier && typeChecker){
+        const variableSymbol = typeChecker.getSymbolAtLocation(initializer);
+        return getReferencedDeclaration(variableSymbol);
+      }
       return property.initializer;
+    }
+    if(isShorthandPropertyAssignmentWithName(property,'props') && typeChecker){
+      const symbol = typeChecker.getShorthandAssignmentValueSymbol(property);
+      return getReferencedDeclaration(symbol);
     }
     return undefined;
   }
@@ -159,7 +182,7 @@ describe('parsing typescript ( tsx )', () => {
       description:'Component function property',
       component:`component: ${functionComponent}`,
       expectedComponentText:functionComponent,
-      props:'[]',
+      props:'props:[]',
       propsExpectation(props){
         expect(ts.isArrayLiteralExpression(props)).toBe(true);
       }
@@ -180,7 +203,7 @@ describe('parsing typescript ( tsx )', () => {
       description:'Typescript test',
       component:`component: ${functionComponent}`,
       expectedComponentText:functionComponent,
-      props:'[]',
+      props:'props:[]',
     }
     return test;
   })();
@@ -197,7 +220,7 @@ describe('parsing typescript ( tsx )', () => {
       description:'Works with additional statements',
       component:`component: ${functionComponent}`,
       expectedComponentText:functionComponent,
-      props:'[]',
+      props:'props:[]',
       preCode:'const path = require("path");'
     }
     return test;
@@ -215,7 +238,7 @@ describe('parsing typescript ( tsx )', () => {
       description:'Component arrow function property',
       component:`component: ${arrowFunctionComponent}`,
       expectedComponentText:arrowFunctionComponent,
-      props:'[]',
+      props:'props:[]',
     }
     return test;
   })();
@@ -233,7 +256,7 @@ describe('parsing typescript ( tsx )', () => {
       description:'Component class function property',
       component:`component: ${classComponent}`,
       expectedComponentText:classComponent,
-      props:'[]',
+      props:'props:[]',
     }
     return test;
   })();
@@ -250,7 +273,7 @@ describe('parsing typescript ( tsx )', () => {
       description:'Component method',
       component:`${methodComponent}`,
       expectedComponentText:methodComponent,
-      props:'[]',
+      props:'props:[]',
     }
     return test;
   })();
@@ -267,7 +290,7 @@ describe('parsing typescript ( tsx )', () => {
       description:'Single Props',
       component:`${methodComponent}`,
       expectedComponentText:methodComponent,
-      props:'{prop1:true}',
+      props:'props:{prop1:true}',
       propsExpectation(props:ts.Expression){
         const extractedProps = extractPropsActual(props);
         expect(extractedProps).toBe('{prop1:true}');
@@ -288,7 +311,7 @@ describe('parsing typescript ( tsx )', () => {
       description:'Array Props',
       component:`${methodComponent}`,
       expectedComponentText:methodComponent,
-      props:'[{prop1:true},{prop2:false}]',
+      props:'props:[{prop1:true},{prop2:false}]',
       propsExpectation(props:ts.Expression){
         const extractedProps = extractPropsActual(props);
         expect(extractedProps).toEqual(['{prop1:true}','{prop2:false}']);
@@ -309,7 +332,7 @@ describe('parsing typescript ( tsx )', () => {
       description:'Array Props Options',
       component:`${methodComponent}`,
       expectedComponentText:methodComponent,
-      props:'[{option:true,props:{prop1:true}},{option:false,props:{prop2:false}}]',
+      props:'props:[{option:true,props:{prop1:true}},{option:false,props:{prop2:false}}]',
       propsExpectation(props:ts.Expression){
         const extractedProps = extractPropsActual(props,'props');
         expect(extractedProps).toEqual(['{prop1:true}','{prop2:false}']);
@@ -318,7 +341,7 @@ describe('parsing typescript ( tsx )', () => {
     return test;
   })();
   
-  // b) Might allow code and props to reference variables
+  
   const tests:TypescriptParserTest[] = [
     componentFunctionPropertyTest,
     componentArrowFunctionPropertyTest,
@@ -331,14 +354,14 @@ describe('parsing typescript ( tsx )', () => {
     typescriptTest
   ];
 
-  /* tests.forEach(test=> {
+  tests.forEach(test=> {
     it(test.description, () => {
       const exports = test.isJs?'module.exports':'export';
         const file = `
 ${test.preCode?test.preCode:''}
 ${exports} = {
   ${test.component},
-  props:${test.props}
+  ${test.props}
 }
 `
         const sourceFile = ts.createSourceFile(`index.${test.isJs?'js':'ts'}`,file,ts.ScriptTarget.Latest,true);
@@ -352,10 +375,7 @@ ${exports} = {
 
     })
   })
- */
-  // next create a program test with code string that uses variable for component - will need to expand 
-  // search to allow for shorthand !
-  
+
   const componentTypeCheckerTest:TypescriptParserTest=(()=> {
     const functionComponent = '' +
 `function (){
@@ -368,7 +388,7 @@ ${exports} = {
       description:'Component function property',
       component:`component: componentVariable`,
       expectedComponentText:functionComponent,
-      props:'[]',
+      props:'props:[]',
       preCode:`const componentVariable = ${functionComponent}`
     }
     return test;
@@ -385,23 +405,47 @@ ${exports} = {
       description:'Component function property',
       component:`component`,
       expectedComponentText:functionComponent,
-      props:'[]',
-      preCode:`const componentVariable = ${functionComponent}`
+      props:'props:[]',
+      preCode:`const component = ${functionComponent}`
     }
     return test;
   })();
+  const referencedPropsTest:TypescriptParserTest=(()=> {
+    const methodComponent = '' +
+`component(){
+  // for js - React.createElement
+  // for tsx - <div/>
+}`
+
+    const test:TypescriptParserTest={
+      isJs:true,
+      description:'Single Props',
+      component:`${methodComponent}`,
+      expectedComponentText:methodComponent,
+      props:'props:propsVariable',
+      propsExpectation(props:ts.Expression){
+        const extractedProps = extractPropsActual(props);
+        expect(extractedProps).toBe('{prop1:true}');
+      },
+      preCode:'const propsVariable = {prop1:true}'
+    }
+    return test;
+  })();
+
+  
   const programTests:TypescriptParserTest[] = [
-    /* componentFunctionPropertyTest,
+    componentFunctionPropertyTest,
     componentArrowFunctionPropertyTest,
     componentClassPropertyTest,
     componentMethodTest,
     singlePropsStringTest,
     arrayPropsStringTest,
-    arrayPropsOptionsStringTest, */
+    arrayPropsOptionsStringTest,
     //worksWithAdditionalStatementsTest, this will not work here
-    //typescriptTest,
-    //componentTypeCheckerTest,
-    shorthandAssignmentTypeCheckerTest
+    typescriptTest,
+    componentTypeCheckerTest,
+    shorthandAssignmentTypeCheckerTest,
+    referencedPropsTest
   ];
   programTests.forEach(test=> {
     it(test.description + ' PROGRAM', () => {
@@ -410,7 +454,7 @@ ${exports} = {
 ${test.preCode?test.preCode:''}
 ${exports} = {
   ${test.component},
-  props:${test.props}
+  ${test.props}
 }
 `
       //if working with real source file.....
