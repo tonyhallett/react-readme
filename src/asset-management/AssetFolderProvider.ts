@@ -1,6 +1,5 @@
-import { CodeDetails, ComponentInfo, ISystem , IRequirer, IReactReadme, ComponentInfoScreenshotOptions} from '../interfaces';
+import { CodeDetails, ComponentInfo, ISystem , IRequirer, ComponentInfoScreenshotOptions} from '../interfaces';
 import { IAssetFolderProvider, ComponentOptions, GlobalComponentOptions, CodeReplacer, ReadmeComponentScreenshotOptions } from './AssetManager';
-
 export interface IAssetFolderComponentInfoProvider<T=any>{
   getComponentInfos(componentAssetsFolder: string, globalOptions: T&GlobalComponentOptions): Promise<ComponentInfo[]>
 }
@@ -203,8 +202,21 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     };
   }
   getComponentScreenshot(componentPath: string, screenshotOptions: ReadmeComponentScreenshotOptions | undefined, key:string|undefined): ComponentInfoScreenshotOptions {
+    let Component:React.ComponentType|undefined
     const required = this.requirer.require(componentPath);
-    const Component = key? required[key]:required;
+    if(required){
+      if(key===undefined && required.default){
+        Component = required.default;
+      }
+      if(Component===undefined){
+        Component = key? required[key]:required;
+      }
+    }
+    
+    if(Component===undefined){
+      throw new Error('Cannot find component at path: ' + componentPath);
+    }
+    
     return {
       Component,
       ...screenshotOptions

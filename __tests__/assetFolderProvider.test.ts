@@ -1,6 +1,6 @@
 import { ReadmeComponentScreenshotOptions, CodeReplacer, } from "../src/asset-management/AssetManager"
 import { AssetFolderProvider, IComponentSorter, SortedComponentFolder, IComponentFolderOptionsProvider} from "../src/asset-management/AssetFolderProvider"
-import { CodeDetails } from "../src/interfaces";
+import { CodeDetails, ComponentInfoScreenshotOptions } from "../src/interfaces";
 
 const noopSorter:IComponentSorter = {
   sort(componentFolderNames:string[]){
@@ -181,10 +181,24 @@ describe('AssetFolderProvider', () => {
             expect(componentInfos[0].componentScreenshot).toBe(componentScreenshot);
             expect(getComponentScreenshot).toHaveBeenCalledWith('readme-assets/components/Component/index.js',mergedOptions.screenshotOptions);
           })
-          describe('getComponentScreenshot', () => {
-            it('should require the default export and merge in export property with the component options', () => {
-              const component = function SomeComponent(){};
-              const require = jest.fn().mockReturnValue({exportProperty:component});
+          describe.only('getComponentScreenshot should require and merge with the component options', () => {
+            const component = function SomeComponent(){};
+            const componentPath = 'readme-assets/Component/index.js';
+            const readmeComponentScreenshotOptions:ReadmeComponentScreenshotOptions = {
+              css:'css',
+              height:1,
+              props:{
+                p1:'v1',
+              },
+              type:'jpeg',
+              webfont:'webfont',
+              width:1
+      
+            }
+            let screenshotOptions:ComponentInfoScreenshotOptions
+            let mockRequire:jest.Mock
+            function getComponentScreenshot(requireResult:any,key?:string){
+              mockRequire = jest.fn().mockReturnValue(requireResult);
               const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider({
                 path:{
                   join(...paths:string[]){
@@ -192,23 +206,46 @@ describe('AssetFolderProvider', () => {
                   }
                 }
               } as any,{
-                require
+                require:mockRequire
               } as any,{} as any,noopSorter)
-              const readmeComponentScreenshotOptions:ReadmeComponentScreenshotOptions = {
-                css:'css',
-                height:1,
-                props:{
-                  p1:'v1',
-                },
-                type:'jpeg',
-                webfont:'webfont',
-                width:1
-        
+              
+              screenshotOptions = assetFolderProvider.getComponentScreenshot('readme-assets/Component/index.js',readmeComponentScreenshotOptions,key);
+            }
+            describe('should require and merge with the component options', () => {
+              interface GetComponentScreenshotTest{
+                description:string
+                requireResult:object,
+                key?:string
               }
-              const screenshotOptions = assetFolderProvider.getComponentScreenshot('readme-assets/Component/index.js',readmeComponentScreenshotOptions,'exportProperty');
-              expect(require).toHaveBeenCalledWith('readme-assets/Component/index.js');
-              expect(screenshotOptions).toEqual({Component:component,...readmeComponentScreenshotOptions})
+              const tests:GetComponentScreenshotTest[] = [
+                {
+                  description:'exports =',
+                  requireResult:component
+                },
+                {
+                  description:'exports default',
+                  requireResult:{default:component}
+                },
+                {
+                  description:'exports property',
+                  requireResult:{someKey:component,default:''},
+                  key:'someKey'
+                },
+  
+              ];
+              tests.forEach(test => {
+                it(test.description, () => {
+                  getComponentScreenshot(test.requireResult,test.key);
+                  expect(mockRequire).toHaveBeenCalledWith(componentPath);
+                  expect(screenshotOptions).toEqual({Component:component,...readmeComponentScreenshotOptions})
+                })
+              })
             })
+            it('should throw error if Component cannot be required', () => {
+              expect(()=>getComponentScreenshot(undefined)).toThrowError('Cannot find component at path: ' + componentPath)
+            })
+
+            
           });
         })
 

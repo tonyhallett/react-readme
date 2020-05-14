@@ -182,20 +182,22 @@ describe('generate', () => {
         //react.createElement.... ${component} ${extension}
         }`;
     }
-    function createCodeFile(extension:'ts'|'tsx'|'js',isComponent1:boolean):GeneratedFile{
+    type ExportType = 'ExportsEquals'|'ExportsDefault'
+    function createCodeFile(extension:'ts'|'tsx'|'js',isComponent1:boolean,exportType:ExportType='ExportsEquals'):GeneratedFile{
+      const exportsEquals = exportType === 'ExportsEquals';
       const component = createCodeFileComponent(extension, isComponent1);
       return {
         contents:`
-        module.exports = ${component}`,
+        module.exports${exportsEquals?'':'.default'} = ${component}`,
         fileName:`index.${extension}`
       }
     }
-    function createComponentFolders(andTs:boolean){
+    function createComponentFolders(andTs:boolean,exportType:ExportType='ExportsEquals'){
       function createComponentFolder(isComponent1:boolean){
         const component = isComponent1?'Component1':'Component2';
         const code = andTs?
-          [createCodeFile('js',isComponent1),createCodeFile('ts',isComponent1)]:
-          createCodeFile('js',isComponent1);
+          [createCodeFile('js',isComponent1,exportType),createCodeFile('ts',isComponent1,exportType)]:
+          createCodeFile('js',isComponent1,exportType);
         return {
           code,
           name:`${component}`,
@@ -237,21 +239,21 @@ describe('generate', () => {
         }
       ]
     }
-    function getJsTsExpectedAddComponentGeneration(expectTs:boolean,assetsFolder = 'README-assets',imageType:ReadmeImageType='png'){
+    function getJsTsExpectedAddComponentGeneration(expectTs:boolean,assetsFolder = 'README-assets',imageType:ReadmeImageType='png',componentFolders:ComponentFolder[]=jsTsComponentFolders){
       const index = expectTs?1:0;
       const language = expectTs?'typescript':'javascript';
       return [
         {
-          codeDetails:{code:(jsTsComponentFolders[0].code as GeneratedFile[])[index].contents,language},
+          codeDetails:{code:(componentFolders[0].code as GeneratedFile[])[index].contents,language},
           imageDetails:{
-            altText:jsTsComponentFolders[0].name,
-            componentImagePath:path.join(assetsFolder,'images',`${jsTsComponentFolders[0].name}.${imageType}`)}
+            altText:componentFolders[0].name,
+            componentImagePath:path.join(assetsFolder,'images',`${componentFolders[0].name}.${imageType}`)}
         },
         {
-          codeDetails:{code:(jsTsComponentFolders[1].code as GeneratedFile[])[index].contents,language},
+          codeDetails:{code:(componentFolders[1].code as GeneratedFile[])[index].contents,language},
           imageDetails:{
-            altText:jsTsComponentFolders[1].name,
-            componentImagePath:path.join(assetsFolder,'images',`${jsTsComponentFolders[1].name}.${imageType}`)}
+            altText:componentFolders[1].name,
+            componentImagePath:path.join(assetsFolder,'images',`${componentFolders[1].name}.${imageType}`)}
         }
       ]
     }
@@ -519,7 +521,8 @@ describe('generate', () => {
         additionalExpectations:(readmeAssetFolder) => {
           const componentScreenshots = mockPuppeteerGenerateAndWrite.mock.calls[0][0];
           function expectComponent(first:boolean){
-            expect((componentScreenshots[first?0:1].Component as any).toString()).toBe(createCodeFileComponent('js',first));
+            const component = componentScreenshots[first?0:1].Component;
+            expect((component as any).toString()).toBe(createCodeFileComponent('js',first));
           }
           function expectId(first:boolean,type:ReadmeImageType){
             expect(componentScreenshots[first?0:1].id).toBe(readmeAssetFolder.getPathInReadmeAssets('images',`Component${first?'1':'2'}.${type}`));
@@ -545,30 +548,59 @@ describe('generate', () => {
       return test;
     })();
 
-    function createComponentInReadmeTest(description:string,importedComponentDefault:boolean,typescript=false){
-      function createImportedComponent(isDefault:boolean, isTypescript:boolean){
+    const componentScreenshotsExportDefaultTest:NoPropsIntegrationTest = (()=> {
+      const componentFolders = createComponentFolders(true,'ExportsDefault');
+      
+      
+      const expectedAddComponentGenerations = getJsTsExpectedAddComponentGeneration(true,undefined,undefined,componentFolders)
+
+      const test:NoPropsIntegrationTest={
+        description:'component screenshots, Component is exports.default',
+        expectedAddComponentGenerations,
+        expectedSurroundPre:undefined,
+        expectedSurroundPost:undefined,
+        folderArgs:[
+          [],componentFolders,undefined,undefined
+        ],
+        additionalExpectations:() => {
+          const componentScreenshots = mockPuppeteerGenerateAndWrite.mock.calls[0][0];
+          function expectComponent(first:boolean){
+            expect((componentScreenshots[first?0:1].Component as any).toString()).toBe(createCodeFileComponent('js',first));
+          }
+          
+          expectComponent(true);
+          expectComponent(false);
+        }
+      }
+      return test;
+    })();
+
+    function createComponentInReadmeTest(description:string,key:string|undefined,typescript=false){
+      function createComponent(isTypescript:boolean){
         const language = isTypescript?'typescript':'javascript';
-        const defaultExport = `
-      module.exports = function ImportedComponent(){
+        return `function ImportedComponent(){
           //return <div/> ${language}
-      }`
+        }`
+      }
+      function createImportedComponent(exportsKey:string|undefined, isTypescript:boolean){
+        const component = createComponent(isTypescript);
+        const exportsEquals = `
+      module.exports = ${component}`
       const exportsProperty = `
       module.exports = {
-        importedComponent:function ImportedComponent(){
-          //return <div/>  ${language}
-        }
+        ${key}:${component}
       }`;
-      return isDefault?defaultExport:exportsProperty;
+      return exportsKey === undefined?exportsEquals:exportsProperty;
       }
-      const jsImportedComponent = createImportedComponent(importedComponentDefault,false);
-      const tsImportedComponent = createImportedComponent(importedComponentDefault,true);
+      const jsImportedComponent = createImportedComponent(key,false);
+      const tsImportedComponent = createImportedComponent(key,true);
     
       const importedComponentName = 'ImportedComponent';
       const importedComponentNameJs = `${importedComponentName}.js`;
       const componentFolders = createComponentFolders(true);
       const requiringReactReadme = `
         module.exports = {
-          component:require('../../${importedComponentNameJs}')${importedComponentDefault?'':'.importedComponent'}
+          component:require('../../${importedComponentNameJs}')${key===undefined?'':`.${key}`}
         }
       `
       componentFolders[0].reactReadme = requiringReactReadme;
@@ -600,11 +632,17 @@ describe('generate', () => {
           fileName:`${importedComponentName}.ts`
         })
       }
+      test.additionalExpectations=()=>{
+        const componentScreenshots = mockPuppeteerGenerateAndWrite.mock.calls[0][0];
+        expect((componentScreenshots[0].Component as any).toString()).toBe(createComponent(false));
+      }
       return test;
     }
-    const importedComponentInReadmePathFinderDefaultTest = createComponentInReadmeTest('Component imported in readme, path found, default export',true);
-    const importedComponentInReadmePathFinderExportPropertyTest = createComponentInReadmeTest('Component imported in readme, path found, exports property',false);
-    const importedComponentInReadmePathTypescriptTest = createComponentInReadmeTest('Component imported in readme, path found, typescript used',false, true);
+    const importedComponentInReadmePathFinderExportsEqualTest = createComponentInReadmeTest('Component imported in readme, path found, exports =',undefined);
+    const importedComponentInReadmePathFinderExportPropertyTest = createComponentInReadmeTest('Component imported in readme, path found, exports property','someProperty');
+    //same test as above
+    //const importedComponentInReadmePathFinderExportsDefaultTest = createComponentInReadmeTest('Component imported in readme, path found, exports default','default');
+    const importedComponentInReadmePathTypescriptTest = createComponentInReadmeTest('Component imported in readme, path found, typescript used',undefined, true);
 
 
     //#endregion
@@ -622,11 +660,11 @@ describe('generate', () => {
       cleansImagesTest,
       codeReplacerTest, 
       optionsMerging,
-      importedComponentInReadmePathFinderDefaultTest,
+      importedComponentInReadmePathFinderExportsEqualTest,
       importedComponentInReadmePathFinderExportPropertyTest,
       importedComponentInReadmePathTypescriptTest,
-      componentScreenshotsTest
-      
+      componentScreenshotsTest,
+      componentScreenshotsExportDefaultTest
     ]
 
     
