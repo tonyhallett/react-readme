@@ -142,32 +142,30 @@ describe('parsing typescript ( tsx )', () => {
   }
   function extractPropsActual(props:ts.Expression,propsProperty?:string,typeChecker?:ts.TypeChecker){
     function getProps(propsOrObjectWithProps:ts.Expression){
-      if(propsProperty===undefined){
-        //how do you distinguish between props being props and props having props property ?
-        //if one or the other then fine
-
-        //if can be either then props property could mean a prop called props
-        //or a property props that is props
-        //if made props property _props ....
-        const objectLiteralExpression = getObjectLiteralFromExpressionOrReference(propsOrObjectWithProps,typeChecker);
-        if(objectLiteralExpression){
+      const objectLiteralExpression = getObjectLiteralFromExpressionOrReference(propsOrObjectWithProps,typeChecker);
+      if(objectLiteralExpression){
+        if(propsProperty===undefined){
           return objectLiteralExpression.getText();
         }
-      }else{
-        
-        if(ts.isObjectLiteralExpression(propsOrObjectWithProps)){
-          for(let i=0;i<propsOrObjectWithProps.properties.length;i++){
-            const property = propsOrObjectWithProps.properties[i];
-  
-            //this will need to be property assignment or shorthand
-            if(ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === propsProperty){
-              if(ts.isObjectLiteralExpression(property.initializer)){
-                return property.initializer.getText();
-              }
+        for(let i=0;i<objectLiteralExpression.properties.length;i++){
+          const property = objectLiteralExpression.properties[i];
+
+          if(isPropertyAssignmentWithName(property,propsProperty)){
+            const objectLiteralExpression = getObjectLiteralFromExpressionOrReference(property.initializer,typeChecker);
+            if(objectLiteralExpression){
+              return objectLiteralExpression.getText();
+            }
+          }else if(isShorthandPropertyAssignmentWithName(property,propsProperty) && typeChecker){
+            const symbol = typeChecker.getShorthandAssignmentValueSymbol(property);
+            const referencedObjectLiteral =  getReferencedDeclaration(symbol);
+            if(referencedObjectLiteral && ts.isObjectLiteralExpression(referencedObjectLiteral)){
+              return referencedObjectLiteral.getText();
             }
           }
         }
-      } 
+      }
+      
+      
     }
     if(ts.isArrayLiteralExpression(props)){
       return props.elements.map(element => getProps(element));
@@ -372,7 +370,7 @@ ${getExportsEquals(isJs,equalTo)}
   
   
   const tests:TypescriptParserTest[] = [
-    /* componentFunctionPropertyTest,
+    componentFunctionPropertyTest,
     componentArrowFunctionPropertyTest,
     componentClassPropertyTest,
     componentMethodTest,
@@ -380,7 +378,7 @@ ${getExportsEquals(isJs,equalTo)}
     arrayPropsStringTest,
     arrayPropsOptionsStringTest,
     worksWithAdditionalStatementsTest, 
-    typescriptTest */
+    typescriptTest
   ];
   
   tests.forEach(test=> {
@@ -475,23 +473,23 @@ ${getExportsEquals(isJs,equalTo)}
   // for js - React.createElement
   // for tsx - <div/>
 }`
-    const props = `{prop:'prop'}`;
+    const commonProps = `{prop:'prop'}`;
     const props3 = `{prop:'3'}`;
     const props4 = `{prop:'4'}`;
     const test:TypescriptParserTest={
       isJs:true,
-      description:'Single Props',
+      description:'Referenced props options',
       expectedComponentText:methodComponent,
       propsExpectation(props,typeChecker){
-        const extractedProps = extractPropsActual(props,undefined,typeChecker);
-        expect(extractedProps).toEqual([props,props,props3,props4]);
+        const extractedProps = extractPropsActual(props,'props',typeChecker);
+        expect(extractedProps).toEqual([commonProps,commonProps,props3,props4]);
       },
       file:getExportsEqualsObjectLiteralFile(true,`${methodComponent}`,'props:propsVariable',`
-      const props = ${props};
+      const props = ${commonProps};
       const props3 = ${props3};
       const props4 = ${props4};
       const options2 = {option1:'2',props}
-      const options4 = {option1:'4',props4}
+      const options4 = {option1:'4',props:props4}
       //could add normal options here as well
       const propsVariable = [{option1:'1',props},options2,{option1:'3',props:props3},options4];
       `),
@@ -531,7 +529,7 @@ ${getExportsEquals(isJs,equalTo)}
   })();
   
   const programTests:TypescriptParserTest[] = [
-    /* componentFunctionPropertyTest,
+    componentFunctionPropertyTest,
     componentArrowFunctionPropertyTest,
     componentClassPropertyTest,
     componentMethodTest,
@@ -544,8 +542,8 @@ ${getExportsEquals(isJs,equalTo)}
     shorthandAssignmentTypeCheckerTest,
     referencedPropsTest,
     exportsEqualsVariableTest,
-    exportsEqualsVariableTestTypescript, */
-    //referencedPropsEntriesTest,
+    exportsEqualsVariableTestTypescript,
+    referencedPropsEntriesTest,
     referencedOptionsPropsEntriesTest
   ];
   programTests.forEach(test=> {
