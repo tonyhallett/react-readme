@@ -128,60 +128,6 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     this.globalOptions = globalOptions;
     const ownInfos = await this.getOwnComponentInfos();
     return this.joinComponentInfos(providersInfos.concat(ownInfos));
-    // definitely want to allow a path for the Component !
-    // could have componentOptions allow props[]
-    // method for getting props into the demo code - but how do you get the string !
-    // you could have structure
-    /*
-      Component1
-        react-readme.js
-          {
-            todo - altText ?
- 
-            componentPath?:string
-            componentExportProperty?:string
- 
-            codeReplacer:(code:string)=>string, - Could this be used to inject ?
-              only the js version
-            codeInReadme?:'None'|'Js',     **** need a new Props setting or propsInReadme
- 
- 
- 
-            screenshotOptions?:
-              css?:string,
-              webfont?:any,
-              width?:number,
-              height?:number,
-              type?:'jpeg'|'png'
- 
-              props?:P,  ************************  odd for this to be global
-               if make props an array - we auto generate more componentInfos
-                ************************
-                String method find props and then parse ? - is an arse
- 
-          }
-        readMe.md ( suppose could have an array) - you could mention props but not as good as generation
-        
-        props1.js, props2.js, props3.js - or a single props which exports an array then different format for that
-        ( which will have a ts version that can inject in the code)
-          If doing typescript will import the component props. - perhaps then codeReplacer hint
- 
-          But what if want different screenshot options ?
-          What if wanted own readme soley for the props
- 
-          Props
-            Props1
-              props
-              README.md
-              react-readme.js
- 
-        It would be a lot easier to ignore props and to just wrap for each props combination
-              
- 
- 
- 
-        ---
-    */
   }
   registerAssetFolderProviders(...providers: IAssetFolderComponentInfoProvider[]):void {
     this.providers = providers;
