@@ -1,6 +1,6 @@
-import { ReadmeComponentScreenshotOptions, CodeReplacer, } from "../src/asset-management/AssetManager"
+import { CodeReplacer, ComponentOptions, CodeInReadme, } from "../src/asset-management/AssetManager"
 import { AssetFolderProvider, IComponentSorter, SortedComponentFolder, IComponentFolderOptionsProvider} from "../src/asset-management/AssetFolderProvider"
-import { CodeDetails, ComponentInfoScreenshotOptions } from "../src/interfaces";
+import { CodeDetails } from "../src/interfaces";
 
 const noopSorter:IComponentSorter = {
   sort(componentFolderNames:string[]){
@@ -105,9 +105,11 @@ describe('AssetFolderProvider', () => {
             assetFolderProvider['getMergedOptions']=()=>Promise.resolve({});
             assetFolderProvider.readComponentReadMe = readComponentReadMe;
             assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
-            assetFolderProvider.getComponentScreenshot = () => ({}) as any;
+            assetFolderProvider['getComponentByPath'] = () => null as any;
+
             const componentAssetFolderPath = 'readme-assets/components/Component';
             const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+            
             expect(hasProps).toHaveBeenCalledWith(componentAssetFolderPath);
             expect(readComponentReadMe).toHaveBeenCalledWith(componentAssetFolderPath);
             expect(componentInfos.length).toBe(1);
@@ -155,104 +157,135 @@ describe('AssetFolderProvider', () => {
         })
 
         describe('screenshot options', () => {
-          it('should have property determined by the component path and merged screenshot options', async () => {
-            const componentScreenshot = {
-              some:'prop'
-            }
-            const getComponentScreenshot = jest.fn().mockReturnValue(componentScreenshot)
-            const hasProps = jest.fn().mockResolvedValue(false);
+          it('should have property containing merged screenshot options', async () => {
             const assetFolderProvider = new AssetFolderProvider({
               path:{
                 join(...paths:string[]){return paths.join('/')}
               }
             } as any, {} as any,{} as any,noopSorter);
-            assetFolderProvider['hasProps'] = hasProps;
+            assetFolderProvider['hasProps'] = () => Promise.resolve(false);
             const mergedOptions = {
               screenshotOptions:{
-                mock:'property'
-              }
+                type:'jpeg'
+              },
+              component:function(){}
             }
             assetFolderProvider['getMergedOptions']=()=>Promise.resolve(mergedOptions as any);
             assetFolderProvider.readComponentReadMe = () => Promise.resolve({} as any);
             assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
-            assetFolderProvider.getComponentScreenshot = getComponentScreenshot;
+
             const componentAssetFolderPath = 'readme-assets/components/Component';
             const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
-            expect(componentInfos[0].componentScreenshot).toBe(componentScreenshot);
-            expect(getComponentScreenshot).toHaveBeenCalledWith('readme-assets/components/Component/index.js',mergedOptions.screenshotOptions);
+            
+            expect(componentInfos[0].componentScreenshot).toEqual(expect.objectContaining(mergedOptions.screenshotOptions));
           })
-          describe.only('getComponentScreenshot should require and merge with the component options', () => {
-            const component = function SomeComponent(){};
-            const componentPath = 'readme-assets/Component/index.js';
-            const readmeComponentScreenshotOptions:ReadmeComponentScreenshotOptions = {
-              css:'css',
-              height:1,
-              props:{
-                p1:'v1',
-              },
-              type:'jpeg',
-              webfont:'webfont',
-              width:1
-      
-            }
-            let screenshotOptions:ComponentInfoScreenshotOptions
-            let mockRequire:jest.Mock
-            function getComponentScreenshot(requireResult:any,key?:string){
-              mockRequire = jest.fn().mockReturnValue(requireResult);
-              const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider({
-                path:{
-                  join(...paths:string[]){
-                    return paths.join('/');
-                  }
-                }
-              } as any,{
-                require:mockRequire
-              } as any,{} as any,noopSorter)
-              
-              screenshotOptions = assetFolderProvider.getComponentScreenshot('readme-assets/Component/index.js',readmeComponentScreenshotOptions,key);
-            }
-            describe('should require and merge with the component options', () => {
-              interface GetComponentScreenshotTest{
-                description:string
-                requireResult:object,
-                key?:string
+          it('should have the component from the merged options if present', async () => {
+            const assetFolderProvider = new AssetFolderProvider({
+              path:{
+                join(...paths:string[]){return paths.join('/')}
               }
-              const tests:GetComponentScreenshotTest[] = [
-                {
-                  description:'exports =',
-                  requireResult:component
+            } as any, {} as any,{} as any,noopSorter);
+            assetFolderProvider['hasProps'] = () => Promise.resolve(false);
+            const mergedOptions = {
+              screenshotOptions:{
+                type:'jpeg'
+              },
+              component:function(){}
+            }
+            assetFolderProvider['getMergedOptions']=()=>Promise.resolve(mergedOptions as any);
+            assetFolderProvider.readComponentReadMe = () => Promise.resolve({} as any);
+            assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
+
+            const componentAssetFolderPath = 'readme-assets/components/Component';
+            const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+            
+            expect(componentInfos[0].componentScreenshot).toEqual({type:'jpeg',Component:mergedOptions.component});
+          })
+          describe('component not on the merged options', () => {
+            it('should getComponentByPath', async () => {
+              const assetFolderProvider = new AssetFolderProvider({
+                path:{
+                  join(...paths:string[]){return paths.join('/')}
+                }
+              } as any, {} as any,{} as any,noopSorter);
+              assetFolderProvider['hasProps'] = () => Promise.resolve(false);
+              const mergedOptions = {
+                screenshotOptions:{
+                  type:'jpeg'
                 },
-                {
-                  description:'exports default',
-                  requireResult:{default:component}
-                },
-                {
-                  description:'exports property',
-                  requireResult:{someKey:component,default:''},
-                  key:'someKey'
-                },
+              }
+              assetFolderProvider['getMergedOptions']=()=>Promise.resolve(mergedOptions as any);
+              assetFolderProvider.readComponentReadMe = () => Promise.resolve({} as any);
+              assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
+              const componentByPath = ()=>({}) as any;
+              assetFolderProvider.getComponentByPath = () => componentByPath;
   
-              ];
-              tests.forEach(test => {
-                it(test.description, () => {
-                  getComponentScreenshot(test.requireResult,test.key);
-                  expect(mockRequire).toHaveBeenCalledWith(componentPath);
-                  expect(screenshotOptions).toEqual({Component:component,...readmeComponentScreenshotOptions})
+              const componentAssetFolderPath = 'readme-assets/components/Component';
+              const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+              
+              expect(componentInfos[0].componentScreenshot).toEqual({type:'jpeg',Component:componentByPath});
+            })
+            describe('getComponentByPath should require the component using the path', () => {
+              const component = function SomeComponent(){};
+              const componentPath = 'readme-assets/Component/index.js';
+              let componentResult:React.ComponentType
+              let mockRequire:jest.Mock
+              function getComponentByPath(requireResult:any,key?:string){
+                mockRequire = jest.fn().mockReturnValue(requireResult);
+                const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider({
+                  path:{
+                    join(...paths:string[]){
+                      return paths.join('/');
+                    }
+                  }
+                } as any,{
+                  require:mockRequire
+                } as any,{} as any,noopSorter)
+                
+                componentResult = assetFolderProvider.getComponentByPath('readme-assets/Component/index.js',key);
+              }
+              describe('the different module exports ', () => {
+                interface GetComponentScreenshotTest{
+                  description:string
+                  requireResult:object,
+                  key?:string
+                }
+                const tests:GetComponentScreenshotTest[] = [
+                  {
+                    description:'exports =',
+                    requireResult:component
+                  },
+                  {
+                    description:'exports default',
+                    requireResult:{default:component}
+                  },
+                  {
+                    description:'exports property',
+                    requireResult:{someKey:component,default:''},
+                    key:'someKey'
+                  },
+                ];
+                
+                tests.forEach(test => {
+                  it(test.description, () => {
+                    getComponentByPath(test.requireResult,test.key);
+                    expect(mockRequire).toHaveBeenCalledWith(componentPath);
+                    expect(componentResult).toEqual(component);
+                  })
                 })
               })
+              it('should throw error if Component cannot be required', () => {
+                expect(()=>getComponentByPath(undefined)).toThrowError('Cannot find component at path: ' + componentPath)
+              })
             })
-            it('should throw error if Component cannot be required', () => {
-              expect(()=>getComponentScreenshot(undefined)).toThrowError('Cannot find component at path: ' + componentPath)
-            })
-
-            
-          });
-        })
-
+          })
+        });
+        
         describe('component code', () => {
           it('should have the component code in properties', async () => {
             const componentCode:CodeDetails = {code:'some code',language:'language'}
             const getComponentCode=jest.fn().mockResolvedValue(componentCode);
+
             const hasProps = jest.fn().mockResolvedValue(false);
             const assetFolderProvider = new AssetFolderProvider({
               path:{
@@ -267,19 +300,161 @@ describe('AssetFolderProvider', () => {
             assetFolderProvider['getMergedOptions']=()=>Promise.resolve(mergedOptions as any);
             assetFolderProvider.readComponentReadMe = () => Promise.resolve({} as any);
             assetFolderProvider.getComponentCode=getComponentCode;
-            assetFolderProvider.getComponentScreenshot = ()=>({} as any);
+            assetFolderProvider.getComponentByPath = () => null as any;
             const componentAssetFolderPath = 'readme-assets/components/Component';
             const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+            
             expect(componentInfos[0].codeDetails).toEqual(componentCode);
-            expect(getComponentCode).toHaveBeenCalledWith('readme-assets/components/Component/index.js',mergedOptions.codeInReadme,mergedOptions.codeReplacer);
           })
-
-          describe('getComponentCode', () => {
-            it('should return empty code and language if codeInReadme is None',async () => {
+          describe('getting the component code', () => {
+            it('should return empty if mergedOptions.codeInReadme is None', async () => {
               const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider(null as any,null as any,{} as any,noopSorter);
-              const componentCode = await assetFolderProvider.getComponentCode('readme-assets/components/Component', 'None',null as any);
+              const componentCode = await assetFolderProvider.getComponentCode(null as any, 'None',null as any);
               expect(componentCode).toEqual({code:'',language:''})
             })
+            describe('it should call the code replacer if mergedOptions.codeInReadme is not None', () => {
+              interface CodeProviderTest{
+                codeInReadme:Exclude<CodeInReadme,'None'>|undefined,
+                expectedCodeProviderIsJs:boolean
+              }
+              const tests:CodeProviderTest[] = [
+                {
+                  codeInReadme:undefined,
+                  expectedCodeProviderIsJs:false
+                },
+                {
+                  codeInReadme:'Js',
+                  expectedCodeProviderIsJs:true
+                }
+              ];
+              tests.forEach( test => {
+                const description = test.codeInReadme?'js':'default ts'
+                it(description, async () => {
+                  const codeProvider = jest.fn().mockReturnValue({code:'',language:''})
+                  const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider(null as any,null as any,{} as any,noopSorter);
+                  await assetFolderProvider.getComponentCode(codeProvider, test.codeInReadme,undefined);
+                  expect(codeProvider).toHaveBeenCalledWith(test.expectedCodeProviderIsJs);
+                })
+              })
+
+            })
+            describe('replacing the provided code', () => {
+              it('should be replaced', async () => {
+                const codeProvider = jest.fn().mockReturnValue({code:'some code ',language:'language'})
+                const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider(null as any,null as any,{} as any,noopSorter);
+                assetFolderProvider['getCodeReplacer'] = () => code => code + 'replaced';
+                const componentCode = await assetFolderProvider.getComponentCode(codeProvider, undefined, undefined);
+                expect(componentCode).toEqual<CodeDetails>({code:'some code replaced',language:'language'});
+              })
+              describe('code replacer', () => {
+                interface CodeReplacementTest{
+                  description:string,
+                  codeReplacer:CodeReplacer|undefined,
+                  expectedReplacedCode:string
+                }
+                const tests:CodeReplacementTest[] = [
+                  {
+                    description:'string replace',
+                    codeReplacer:{
+                      regex:/can be/,
+                      replace:'should have been'
+                    },
+                    expectedReplacedCode:'This should have been replaced'
+                  },
+                  {
+                    description:'function replace',
+                    codeReplacer: code => code + ' and it was',
+                    expectedReplacedCode:'This can be replaced and it was'
+                  },
+                  {
+                    description:'undefined, no replacement',
+                    codeReplacer:undefined,
+                    expectedReplacedCode:'This can be replaced'
+                  },
+  
+                ]
+                tests.forEach(test => {
+                  it(`${test.description}`, async () => {
+                    const codeProvider = jest.fn().mockReturnValue({code:'This can be replaced',language:'language'})
+                    const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider(null as any,null as any,{} as any,noopSorter);
+                    const componentCode = await assetFolderProvider.getComponentCode(codeProvider, undefined, test.codeReplacer);
+                    expect(componentCode.code).toBe(test.expectedReplacedCode);
+                  })
+                })
+              })
+            })
+            describe.only('the chosen code provider', () => {
+              const componentAssetFolderPath = 'readme-assets/components/Component';
+              interface CodeProviderTest{
+                mergedOptionsComponent?:any,
+                mergedOptionsComponentPath?:string,
+                expectedReadCode:boolean,
+                expectedFirstArg:string
+              }
+              const tests:CodeProviderTest[] = [
+                {
+                  expectedReadCode:true,
+                  expectedFirstArg:expect.anything() as any, // componentPath already covered in previous test
+                },
+                {
+                  mergedOptionsComponent:function(){},
+                  expectedReadCode:false,
+                  expectedFirstArg:componentAssetFolderPath
+                },
+                {
+                  mergedOptionsComponent:function(){},
+                  mergedOptionsComponentPath:'the path',
+                  expectedReadCode:true,
+                  expectedFirstArg:expect.anything() as any // componentPath already covered in previous test
+                }
+              ];
+              tests.forEach(test => {
+                it('', async() => {
+                  const optionsProviderGetComponentCode = jest.fn().mockReturnValue({code:'', language:''} as CodeDetails);
+                  const readComponentCode = jest.fn().mockReturnValue({code:'', language:''} as CodeDetails);
+
+                  const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider(
+                    {
+                      path:{
+                        join(...paths:string[]){
+                          return paths.join('/')
+                        }
+                      }
+                    } as any,
+                    null as any,
+                    {getComponentCode:optionsProviderGetComponentCode} as any,
+                    noopSorter);
+
+                  assetFolderProvider['hasProps'] = () => Promise.resolve(false);
+                  
+                  const mergedOptions = { } as ComponentOptions;
+                  if(test.mergedOptionsComponent){
+                    mergedOptions.component = test.mergedOptionsComponent;
+                  }
+                  if(test.mergedOptionsComponentPath){
+                    mergedOptions.componentPath = test.mergedOptionsComponentPath;
+                  }
+
+                  assetFolderProvider['getMergedOptions']=()=>Promise.resolve(mergedOptions as any);
+                  assetFolderProvider['getAbsolutePathToJs'] = () => '';
+                  assetFolderProvider['readComponentCode'] = readComponentCode;
+                  assetFolderProvider['readComponentReadMe'] = () => Promise.resolve('');
+                  assetFolderProvider['getComponentByPath'] = () => ({} as any)
+      
+                  
+                  await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+                  
+                  const expectedProvider = test.expectedReadCode? readComponentCode: optionsProviderGetComponentCode;
+                  expect(expectedProvider).toHaveBeenCalledWith(test.expectedFirstArg,false);
+                })
+              })
+            })
+            //then readmecode
+            
+            
+          })
+          /* describe('readComponentCode', () => {
+            
         
             it('should readUntilExists index.js if codeInReadMe is Js and replace', async () => {
               const codeReplacer = jest.fn().mockReturnValue('replaced');
@@ -357,55 +532,11 @@ describe('AssetFolderProvider', () => {
               expect(readUntilExists).toHaveBeenCalledWith('readme-assets/components/Component/component.ts','readme-assets/components/Component/component.tsx','readme-assets/components/Component/component.js');
             })
 
-            describe('code replacement', () => {
-              interface CodeReplacementTest{
-                description:string,
-                codeReplacer:CodeReplacer,
-                expectedReplacedCode:string
-              }
-              const tests:CodeReplacementTest[] = [
-                {
-                  description:'string replace',
-                  codeReplacer:{
-                    regex:/can be/,
-                    replace:'should have been'
-                  },
-                  expectedReplacedCode:'This should have been replaced'
-                },
-                {
-                  description:'function replace',
-                  codeReplacer: code => code + ' and it was',
-                  expectedReplacedCode:'This can be replaced and it was'
-                },
-
-              ]
-              tests.forEach(test => {
-                it(`${test.description}`, async () => {
-                  const readUntilExists = jest.fn().mockResolvedValue({
-                    didRead:true,
-                    read:'This can be replaced',
-                    readPath:'readme-assets/components/Component/component.ts'
-                  });
-                  const extname = jest.fn().mockReturnValue('.ts')
-                  const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider({
-                    path:{
-                      join(...paths:string[]){
-                        return paths.join('/');
-                      },
-                      extname
-                    },
-                    fs:{
-                      readUntilExists
-                    }
-                  } as any,null as any, {} as any,noopSorter);
-                  const componentCode = await assetFolderProvider.getComponentCode('readme-assets/components/Component/component.js', undefined,test.codeReplacer);
-                  expect(componentCode.code).toBe(test.expectedReplacedCode);
-                })
-              })
+            
               
               
             })
-          })
+          }) */
         })
 
         it('should merge options from the provider with the global options', async () => {
@@ -415,7 +546,8 @@ describe('AssetFolderProvider', () => {
                 aFolderOption:'',
                 codeInReadme:'Js'
               } as any)
-            }
+            },
+            getComponentCode:()=>Promise.resolve(null as any)
           }
           const assetFolderProvider = new AssetFolderProvider({
             fs:{
@@ -434,7 +566,6 @@ describe('AssetFolderProvider', () => {
           }
           );
 
-          assetFolderProvider.getComponentScreenshot = ()=> ({} as any);
           assetFolderProvider['hasProps'] =()=>Promise.resolve(true);
           const generateComponentInfosForProps = jest.fn().mockResolvedValue([]);
           assetFolderProvider['generateComponentInfosForProps'] = generateComponentInfosForProps
@@ -445,48 +576,60 @@ describe('AssetFolderProvider', () => {
         })
       })
         
-      describe('component path in options', () => {
-        interface ComponentPathOptionsTest{
-          isAbsolute:boolean,
-
-          expectedPath:string
-
+      describe('component path', () => {
+        const componentAssetFolderPath = 'readme-assets/components/Component';
+        const mergedOptionsComponentPath = 'mergedOptions/componentpath';
+        interface ComponentPathTest{
+          description:string,
+          mergedOptionsComponentPath?:string,
+          isAbsolute?:boolean,
+          expectedComponentPath:string
         }
-        const tests:ComponentPathOptionsTest[] = [
+        const tests:ComponentPathTest[] = [
           {
-            isAbsolute:true,
-            expectedPath:'pathToComponent.js'
+            description:'index.js',
+            expectedComponentPath:`${componentAssetFolderPath}/index.js`
           },
           {
+            description:'absolute merged options component path',
+            isAbsolute:true,
+            expectedComponentPath:mergedOptionsComponentPath
+          },
+          {
+            description:'relative ( joined ) merged options component path to the component asset folder ',
             isAbsolute:false,
-            expectedPath:'readme-assets/components/Component/pathToComponent.js'
+            expectedComponentPath:`${componentAssetFolderPath}/${mergedOptionsComponentPath}`
           }
         ]
         tests.forEach(test => {
-          it(`${test.isAbsolute?'should use absolute for getComponentCode and getComponentScreenshot':'should be relative to component folder if not absolute'}`, async () => {
-            const getComponentCode = jest.fn().mockResolvedValue('');
-            const getComponentScreenshot = jest.fn().mockResolvedValue('');
-            const isAbsolute=jest.fn().mockReturnValue(test.isAbsolute)
+          it(test.description, async () => {
+            const readComponentCode = jest.fn().mockResolvedValue('');
+            const getComponentByPath = jest.fn().mockResolvedValue('');
+
             const hasProps = jest.fn().mockResolvedValue(false);
             const assetFolderProvider = new AssetFolderProvider({
               path:{
                 join(...paths:string[]){return paths.join('/')},
-                isAbsolute
+                isAbsolute:()=>test.isAbsolute
               }
             } as any, {} as any,{} as any,noopSorter);
             assetFolderProvider['hasProps'] = hasProps;
+
             const mergedOptions = {
-              componentPath:'pathToComponent.js'
+            } as ComponentOptions;
+            if(test.isAbsolute!==undefined){
+              mergedOptions.componentPath=mergedOptionsComponentPath;
             }
             assetFolderProvider['getMergedOptions']=()=>Promise.resolve(mergedOptions as any);
+
             assetFolderProvider.readComponentReadMe = () => Promise.resolve({} as any);
-            assetFolderProvider.getComponentCode=getComponentCode;
-            assetFolderProvider.getComponentScreenshot = getComponentScreenshot;
-            const componentAssetFolderPath = 'readme-assets/components/Component';
+            assetFolderProvider.getComponentByPath = getComponentByPath;
+            assetFolderProvider['readComponentCode'] = readComponentCode;
 
             await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
-            expect(getComponentCode.mock.calls[0][0]).toBe(test.expectedPath);
-            expect(getComponentScreenshot.mock.calls[0][0]).toBe(test.expectedPath);
+            
+            expect(readComponentCode.mock.calls[0][0]).toBe(test.expectedComponentPath);
+            expect(getComponentByPath.mock.calls[0][0]).toBe(test.expectedComponentPath);
           })
         })
       })

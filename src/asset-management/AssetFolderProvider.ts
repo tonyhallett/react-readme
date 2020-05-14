@@ -1,5 +1,5 @@
 import { CodeDetails, ComponentInfo, ISystem , IRequirer, ComponentInfoScreenshotOptions} from '../interfaces';
-import { IAssetFolderProvider, ComponentOptions, GlobalComponentOptions, CodeReplacer, ReadmeComponentScreenshotOptions } from './AssetManager';
+import { IAssetFolderProvider, ComponentOptions, GlobalComponentOptions, CodeReplacer, ReadmeComponentScreenshotOptions, CodeInReadme } from './AssetManager';
 export interface IAssetFolderComponentInfoProvider<T=any>{
   getComponentInfos(componentAssetsFolder: string, globalOptions: T&GlobalComponentOptions): Promise<ComponentInfo[]>
 }
@@ -10,8 +10,11 @@ export interface IComponentSorter{
 }
 
 export interface IComponentFolderOptionsProvider{
+  getComponentCode(componentAssetFolderPath: string,isJs:boolean): Promise<CodeDetails>;
   getOptions(componentFolderPath:string):Promise<ComponentOptions|undefined>
 }
+
+type CodeProvider = (isJs:boolean)=>Promise<CodeDetails>
 
 export class AssetFolderProvider implements IAssetFolderProvider {
   private languageLookup: Array<{
@@ -60,20 +63,34 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     return this.system.path.join(componentAssetFolderPath, jsPath);
   }
   private async getComponentInfosForFolder(componentAssetFolderPath: string, componentAssetFolderName: string): Promise<ComponentInfo[]> {
-    const mergedFolderOptions = await this.getMergedOptions(componentAssetFolderPath);
+    const mergedOptions = await this.getMergedOptions(componentAssetFolderPath);
     if (await this.hasProps(componentAssetFolderPath)) {
-      return this.generateComponentInfosForProps(componentAssetFolderPath, mergedFolderOptions);
+      return this.generateComponentInfosForProps(componentAssetFolderPath, mergedOptions);
     }
     const readme = await this.readComponentReadMe(componentAssetFolderPath);
-    const componentPath = mergedFolderOptions && mergedFolderOptions.componentPath ? this.getAbsolutePathToJs(componentAssetFolderPath, mergedFolderOptions.componentPath) :
+
+    const componentPath = mergedOptions && mergedOptions.componentPath ? this.getAbsolutePathToJs(componentAssetFolderPath, mergedOptions.componentPath) :
       this.system.path.join(componentAssetFolderPath, 'index.js');
-    const codeDetails = await this.getComponentCode(componentPath, mergedFolderOptions.codeInReadme, mergedFolderOptions.codeReplacer);
-    const componentScreenshot = this.getComponentScreenshot(componentPath, mergedFolderOptions.screenshotOptions,mergedFolderOptions.componentKey);
+    
+    let codeProvider!:CodeProvider;
+    if(mergedOptions.component&&mergedOptions.componentPath===undefined){
+      codeProvider = (isJs) => this.componentFolderOptionsProvider.getComponentCode(componentAssetFolderPath,isJs);
+    }else{
+      codeProvider = (isJs) => this.readComponentCode(componentPath,isJs);
+    }
+    const codeDetails = await this.getComponentCode(codeProvider, mergedOptions.codeInReadme,this.getCodeReplacer(mergedOptions.codeReplacer))
+    
+    
+    
+    const Component = mergedOptions.component||this.getComponentByPath(componentPath, mergedOptions.componentKey);
     const componentInfo: ComponentInfo = {
       codeDetails,
       readme,
       name: componentAssetFolderName,
-      componentScreenshot
+      componentScreenshot:{
+        Component,
+        ...mergedOptions.screenshotOptions
+      }
     };
     return [componentInfo];
   }
@@ -133,7 +150,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     this.providers = providers;
   }
   
-  async getComponentCode(componentPath: string, codeInReadme: "None" | "Js" | undefined, codeReplacer: CodeReplacer | undefined): Promise<CodeDetails> {
+  async getComponentCode(codeProvider:(isJs:boolean)=>Promise<CodeDetails>, codeInReadme: CodeInReadme| undefined, codeReplacer: CodeReplacer | undefined): Promise<CodeDetails> {
     if (codeInReadme === 'None') {
       const noCodeDetails: CodeDetails = {
         code: '',
@@ -141,13 +158,31 @@ export class AssetFolderProvider implements IAssetFolderProvider {
       };
       return Promise.resolve(noCodeDetails);
     }
-    const { code, language } = await this.readComponentCode(componentPath, codeInReadme === 'Js');
+    
+    const { code, language } = await codeProvider(codeInReadme === 'Js');
+
     return {
       code: this.getCodeReplacer(codeReplacer)(code),
       language
     };
   }
-  getComponentScreenshot(componentPath: string, screenshotOptions: ReadmeComponentScreenshotOptions | undefined, key:string|undefined): ComponentInfoScreenshotOptions {
+  /* async getComponentCode(componentPath: string, codeInReadme: "None" | "Js" | undefined, codeReplacer: CodeReplacer | undefined): Promise<CodeDetails> {
+    if (codeInReadme === 'None') {
+      const noCodeDetails: CodeDetails = {
+        code: '',
+        language: ''
+      };
+      return Promise.resolve(noCodeDetails);
+    }
+    
+    const { code, language } = await this.readComponentCode(componentPath, codeInReadme === 'Js');
+
+    return {
+      code: this.getCodeReplacer(codeReplacer)(code),
+      language
+    };
+  } */
+  getComponentByPath(componentPath: string, key:string|undefined): React.ComponentType {
     let Component:React.ComponentType|undefined
     const required = this.requirer.require(componentPath);
     if(required){
@@ -162,11 +197,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     if(Component===undefined){
       throw new Error('Cannot find component at path: ' + componentPath);
     }
-    
-    return {
-      Component,
-      ...screenshotOptions
-    };
+    return Component;
   }
   async readComponentReadMe(componentAssetFolder: string): Promise<string> {
     const readmePath = this.system.path.join(componentAssetFolder, 'README.md');

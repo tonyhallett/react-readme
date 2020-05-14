@@ -10,9 +10,11 @@ export type CodeReplacer = {
 
 export type ReadmeComponentScreenshotOptions=ComponentScreenshotOptions&{type?:ReadmeImageType}
 
+export type CodeInReadme = 'None'|'Js'
+
 export interface ComponentOptionsCommon{
   codeReplacer?:CodeReplacer,
-  codeInReadme?:'None'|'Js',
+  codeInReadme?:CodeInReadme,
   screenshotOptions?:ReadmeComponentScreenshotOptions
 }
 export type ComponentOptionsNoId = Omit<ComponentOptionsCommon,'id'>;
