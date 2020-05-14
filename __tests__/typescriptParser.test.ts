@@ -12,23 +12,32 @@ describe('parsing typescript ( tsx )', () => {
   function isComponentType(kind:ts.SyntaxKind){
     return kind=== ts.SyntaxKind.ClassExpression || kind === ts.SyntaxKind.FunctionExpression || kind === ts.SyntaxKind.ArrowFunction;
   }
-  function getModuleExportsEqualsObjectLiteralExpression(sourceFile:ts.SourceFile,isJs:boolean):ts.ObjectLiteralExpression|undefined{
+  function getObjectLiteralFromExpressionOrReference(expression:ts.Expression,typeChecker?:ts.TypeChecker){
+    if(ts.isObjectLiteralExpression(expression)){
+      return expression;
+    }else if(ts.isIdentifier(expression)&&typeChecker){
+      const variableSymbol = typeChecker.getSymbolAtLocation(expression);
+      const declaration = getReferencedDeclaration(variableSymbol);
+      if(declaration && ts.isObjectLiteralExpression(declaration)){
+        return declaration;
+      }
+    }
+  }
+  function getModuleExportsEqualsObjectLiteralExpression(sourceFile:ts.SourceFile,isJs:boolean,typeChecker?:ts.TypeChecker):ts.ObjectLiteralExpression|undefined{
+    
     let moduleExportsEqualsObjectLiteralExpression:ts.ObjectLiteralExpression|undefined;
     const potentials = sourceFile!.statements.map(s=>{
       if(isJs){
         if(ts.isExpressionStatement(s) && ts.isBinaryExpression(s.expression)){
           const b= s.expression;
           if(ts.isPropertyAccessExpression(b.left)&&ts.isIdentifier(b.left.expression) && b.left.expression.text==='module' && ts.isIdentifier(b.left.name) && b.left.name.text === 'exports'){
-            if(ts.isObjectLiteralExpression(b.right)){
-              return b.right;
-            }
+            return getObjectLiteralFromExpressionOrReference(b.right,typeChecker);
           }
         }
         return undefined;
       }
-
-      if(ts.isExportAssignment(s) && ts.isObjectLiteralExpression(s.expression)){
-        return s.expression;
+      if(ts.isExportAssignment(s)){
+        return getObjectLiteralFromExpressionOrReference(s.expression,typeChecker);
       }
       
     }).filter(potential => potential !==undefined) as ts.ObjectLiteralExpression[];
@@ -38,17 +47,17 @@ describe('parsing typescript ( tsx )', () => {
     }
     return moduleExportsEqualsObjectLiteralExpression;
   }
-  function getModuleExportsProperties(sourceFile:ts.SourceFile,isJs:boolean):ts.NodeArray<ts.ObjectLiteralElementLike>|undefined{
-    const moduleExportsObjectLiteral = getModuleExportsEqualsObjectLiteralExpression(sourceFile,isJs);
+  function getModuleExportsProperties(sourceFile:ts.SourceFile,isJs:boolean,typeChecker?:ts.TypeChecker):ts.NodeArray<ts.ObjectLiteralElementLike>|undefined{
+    const moduleExportsObjectLiteral = getModuleExportsEqualsObjectLiteralExpression(sourceFile,isJs,typeChecker);
     if(moduleExportsObjectLiteral===undefined){
       return undefined;
     }
     return moduleExportsObjectLiteral.properties
   }
   function extractComponentAndProps(sourceFile:ts.SourceFile,isJs:boolean,typeChecker?:ts.TypeChecker){
-    const properties = getModuleExportsProperties(sourceFile,isJs);
+    const properties = getModuleExportsProperties(sourceFile,isJs,typeChecker);
     let component:string|undefined
-    let props:any|undefined; //perhaps just return the property value for now and then will decide if {props:props,options...}
+    let props:any|undefined;
     if(properties){
       for(let i=0;i<properties.length;i++){
         const property = properties[i];
@@ -140,20 +149,25 @@ describe('parsing typescript ( tsx )', () => {
         //if can be either then props property could mean a prop called props
         //or a property props that is props
         //if made props property _props ....
-
-        if(ts.isObjectLiteralExpression(propsOrObjectWithProps)){
-          return propsOrObjectWithProps.getText();
+        const objectLiteralExpression = getObjectLiteralFromExpressionOrReference(propsOrObjectWithProps,typeChecker);
+        if(objectLiteralExpression){
+          return objectLiteralExpression.getText();
         }
-      }else if(ts.isObjectLiteralExpression(propsOrObjectWithProps)){
-        for(let i=0;i<propsOrObjectWithProps.properties.length;i++){
-          const property = propsOrObjectWithProps.properties[i];
-          if(ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === propsProperty){
-            if(ts.isObjectLiteralExpression(property.initializer)){
-              return property.initializer.getText();
+      }else{
+        
+        if(ts.isObjectLiteralExpression(propsOrObjectWithProps)){
+          for(let i=0;i<propsOrObjectWithProps.properties.length;i++){
+            const property = propsOrObjectWithProps.properties[i];
+  
+            //this will need to be property assignment or shorthand
+            if(ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === propsProperty){
+              if(ts.isObjectLiteralExpression(property.initializer)){
+                return property.initializer.getText();
+              }
             }
           }
         }
-      }
+      } 
     }
     if(ts.isArrayLiteralExpression(props)){
       return props.elements.map(element => getProps(element));
@@ -161,13 +175,38 @@ describe('parsing typescript ( tsx )', () => {
     return getProps(props);
   }
 
+  function getExportsEquals(isJs:boolean,equalTo:string){
+    const exports = isJs?'module.exports':'export';
+    return `${exports} = ${equalTo}`;
+  }
+  function getObjectLiteral(component:string,props:string){
+    return `{
+      ${component},
+      ${props}
+    }`
+  }
+  function getExportsEqualsObjectLiteralFile(isJs:boolean,component:string,props:string,pre?:string){
+    const equalTo = getObjectLiteral(component,props);
+    const file = `
+${pre?pre:''}
+${getExportsEquals(isJs,equalTo)}
+  `;
+
+    return file;
+  }
+  function getExportsEqualVariable(isJs:boolean,component:string,props:string){
+    const objectLiteral = getObjectLiteral(component,props);
+    const file = `
+    const exportsVariable = ${objectLiteral};
+    ${getExportsEquals(isJs,'exportsVariable')}
+    `;
+    return file;
+  }
   interface TypescriptParserTest{
-    preCode?:string,
     isJs:boolean,
     description:string,
-    component:string,
     expectedComponentText:string,
-    props:string,
+    file:string,
     propsExpectation?:(props:ts.Expression,typeChecker?:ts.TypeChecker)=>void
   }
   const componentFunctionPropertyTest:TypescriptParserTest=(()=> {
@@ -180,9 +219,8 @@ describe('parsing typescript ( tsx )', () => {
     const test:TypescriptParserTest={
       isJs:true,
       description:'Component function property',
-      component:`component: ${functionComponent}`,
       expectedComponentText:functionComponent,
-      props:'props:[]',
+      file:getExportsEqualsObjectLiteralFile(true,`component: ${functionComponent}`,'props:[]'),
       propsExpectation(props){
         expect(ts.isArrayLiteralExpression(props)).toBe(true);
       }
@@ -201,9 +239,8 @@ describe('parsing typescript ( tsx )', () => {
     const test:TypescriptParserTest={
       isJs:false,
       description:'Typescript test',
-      component:`component: ${functionComponent}`,
       expectedComponentText:functionComponent,
-      props:'props:[]',
+      file:getExportsEqualsObjectLiteralFile(false,`component: ${functionComponent}`,'props:[]'),
     }
     return test;
   })();
@@ -218,10 +255,8 @@ describe('parsing typescript ( tsx )', () => {
     const test:TypescriptParserTest={
       isJs:true,
       description:'Works with additional statements',
-      component:`component: ${functionComponent}`,
       expectedComponentText:functionComponent,
-      props:'props:[]',
-      preCode:'const path = require("path");'
+      file:getExportsEqualsObjectLiteralFile(true,`component: ${functionComponent}`,'props:[]','const path = require("path");'),
     }
     return test;
   })();
@@ -236,9 +271,8 @@ describe('parsing typescript ( tsx )', () => {
     const test:TypescriptParserTest={
       isJs:true,
       description:'Component arrow function property',
-      component:`component: ${arrowFunctionComponent}`,
       expectedComponentText:arrowFunctionComponent,
-      props:'props:[]',
+      file:getExportsEqualsObjectLiteralFile(true,`component: ${arrowFunctionComponent}`,'props:[]'),
     }
     return test;
   })();
@@ -254,9 +288,8 @@ describe('parsing typescript ( tsx )', () => {
     const test:TypescriptParserTest={
       isJs:true,
       description:'Component class function property',
-      component:`component: ${classComponent}`,
       expectedComponentText:classComponent,
-      props:'props:[]',
+      file:getExportsEqualsObjectLiteralFile(true,`component: ${classComponent}`,'props:[]'),
     }
     return test;
   })();
@@ -271,9 +304,8 @@ describe('parsing typescript ( tsx )', () => {
     const test:TypescriptParserTest={
       isJs:true,
       description:'Component method',
-      component:`${methodComponent}`,
       expectedComponentText:methodComponent,
-      props:'props:[]',
+      file:getExportsEqualsObjectLiteralFile(true,`${methodComponent}`,'props:[]'),
     }
     return test;
   })();
@@ -288,13 +320,12 @@ describe('parsing typescript ( tsx )', () => {
     const test:TypescriptParserTest={
       isJs:true,
       description:'Single Props',
-      component:`${methodComponent}`,
       expectedComponentText:methodComponent,
-      props:'props:{prop1:true}',
       propsExpectation(props:ts.Expression){
         const extractedProps = extractPropsActual(props);
         expect(extractedProps).toBe('{prop1:true}');
-      }
+      },
+      file:getExportsEqualsObjectLiteralFile(true,`${methodComponent}`,'props:{prop1:true}'),
     }
     return test;
   })();
@@ -309,13 +340,12 @@ describe('parsing typescript ( tsx )', () => {
     const test:TypescriptParserTest={
       isJs:true,
       description:'Array Props',
-      component:`${methodComponent}`,
       expectedComponentText:methodComponent,
-      props:'props:[{prop1:true},{prop2:false}]',
       propsExpectation(props:ts.Expression){
         const extractedProps = extractPropsActual(props);
         expect(extractedProps).toEqual(['{prop1:true}','{prop2:false}']);
-      }
+      },
+      file:getExportsEqualsObjectLiteralFile(true,`${methodComponent}`,'props:[{prop1:true},{prop2:false}]'),
     }
     return test;
   })();
@@ -330,20 +360,19 @@ describe('parsing typescript ( tsx )', () => {
     const test:TypescriptParserTest={
       isJs:true,
       description:'Array Props Options',
-      component:`${methodComponent}`,
       expectedComponentText:methodComponent,
-      props:'props:[{option:true,props:{prop1:true}},{option:false,props:{prop2:false}}]',
       propsExpectation(props:ts.Expression){
         const extractedProps = extractPropsActual(props,'props');
         expect(extractedProps).toEqual(['{prop1:true}','{prop2:false}']);
-      }
+      },
+      file:getExportsEqualsObjectLiteralFile(true,`${methodComponent}`,'props:[{option:true,props:{prop1:true}},{option:false,props:{prop2:false}}]'),
     }
     return test;
   })();
   
   
   const tests:TypescriptParserTest[] = [
-    componentFunctionPropertyTest,
+    /* componentFunctionPropertyTest,
     componentArrowFunctionPropertyTest,
     componentClassPropertyTest,
     componentMethodTest,
@@ -351,20 +380,12 @@ describe('parsing typescript ( tsx )', () => {
     arrayPropsStringTest,
     arrayPropsOptionsStringTest,
     worksWithAdditionalStatementsTest, 
-    typescriptTest
+    typescriptTest */
   ];
-
+  
   tests.forEach(test=> {
     it(test.description, () => {
-      const exports = test.isJs?'module.exports':'export';
-        const file = `
-${test.preCode?test.preCode:''}
-${exports} = {
-  ${test.component},
-  ${test.props}
-}
-`
-        const sourceFile = ts.createSourceFile(`index.${test.isJs?'js':'ts'}`,file,ts.ScriptTarget.Latest,true);
+        const sourceFile = ts.createSourceFile(`index.${test.isJs?'js':'ts'}`,test.file,ts.ScriptTarget.Latest,true);
         const {component,props} = extractComponentAndProps(sourceFile,test.isJs);
         
         if(test.propsExpectation){
@@ -372,7 +393,6 @@ ${exports} = {
         }
 
         expect(component).toBe(test.expectedComponentText);
-
     })
   })
 
@@ -386,10 +406,8 @@ ${exports} = {
     const test:TypescriptParserTest={
       isJs:true,
       description:'Component function property',
-      component:`component: componentVariable`,
       expectedComponentText:functionComponent,
-      props:'props:[]',
-      preCode:`const componentVariable = ${functionComponent}`
+      file:getExportsEqualsObjectLiteralFile(true,'component: componentVariable','props:[]',`const componentVariable = ${functionComponent}`),
     }
     return test;
   })();
@@ -403,10 +421,8 @@ ${exports} = {
     const test:TypescriptParserTest={
       isJs:true,
       description:'Component function property',
-      component:`component`,
       expectedComponentText:functionComponent,
-      props:'props:[]',
-      preCode:`const component = ${functionComponent}`
+      file:getExportsEqualsObjectLiteralFile(true,'component','props:[]',`const component = ${functionComponent}`),
     }
     return test;
   })();
@@ -420,21 +436,102 @@ ${exports} = {
     const test:TypescriptParserTest={
       isJs:true,
       description:'Single Props',
-      component:`${methodComponent}`,
       expectedComponentText:methodComponent,
-      props:'props:propsVariable',
       propsExpectation(props:ts.Expression){
         const extractedProps = extractPropsActual(props);
         expect(extractedProps).toBe('{prop1:true}');
       },
-      preCode:'const propsVariable = {prop1:true}'
+      file:getExportsEqualsObjectLiteralFile(true,`${methodComponent}`,'props:propsVariable',`const propsVariable = {prop1:true}`),
+    }
+    return test;
+  })();
+  const referencedPropsEntriesTest:TypescriptParserTest=(()=> {
+    const methodComponent = '' +
+`component(){
+  // for js - React.createElement
+  // for tsx - <div/>
+}`
+
+    const test:TypescriptParserTest={
+      isJs:true,
+      description:'Single Props',
+      expectedComponentText:methodComponent,
+      propsExpectation(props,typeChecker){
+        const extractedProps = extractPropsActual(props,undefined,typeChecker);
+        expect(extractedProps).toEqual(['{prop1:true}','{prop2:false}']);
+      },
+      file:getExportsEqualsObjectLiteralFile(true,`${methodComponent}`,'props:propsVariable',`
+      const props1 = {prop1:true};
+      const props2 = {prop2:false};
+      const propsVariable = [props1,props2];
+      `),
     }
     return test;
   })();
 
+  const referencedOptionsPropsEntriesTest:TypescriptParserTest=(()=> {
+    const methodComponent = '' +
+`component(){
+  // for js - React.createElement
+  // for tsx - <div/>
+}`
+    const props = `{prop:'prop'}`;
+    const props3 = `{prop:'3'}`;
+    const props4 = `{prop:'4'}`;
+    const test:TypescriptParserTest={
+      isJs:true,
+      description:'Single Props',
+      expectedComponentText:methodComponent,
+      propsExpectation(props,typeChecker){
+        const extractedProps = extractPropsActual(props,undefined,typeChecker);
+        expect(extractedProps).toEqual([props,props,props3,props4]);
+      },
+      file:getExportsEqualsObjectLiteralFile(true,`${methodComponent}`,'props:propsVariable',`
+      const props = ${props};
+      const props3 = ${props3};
+      const props4 = ${props4};
+      const options2 = {option1:'2',props}
+      const options4 = {option1:'4',props4}
+      //could add normal options here as well
+      const propsVariable = [{option1:'1',props},options2,{option1:'3',props:props3},options4];
+      `),
+    }
+    return test;
+  })();
+
+  const exportsEqualsVariableTest:TypescriptParserTest = (()=> {
+    const methodComponent = '' +
+`component(){
+  // for js - React.createElement
+  // for tsx - <div/>
+}`
+
+    const test:TypescriptParserTest={
+      isJs:true,
+      description:'module.exports = someVar',
+      expectedComponentText:methodComponent,
+      file:getExportsEqualVariable(true,`${methodComponent}`,'props:[]'),
+    }
+    return test;
+  })();
+  const exportsEqualsVariableTestTypescript:TypescriptParserTest = (()=> {
+    const methodComponent = '' +
+`component(){
+  // for js - React.createElement
+  // for tsx - <div/>
+}`
+
+    const test:TypescriptParserTest={
+      isJs:false,
+      description:'module.exports = someVar typescript',
+      expectedComponentText:methodComponent,
+      file:getExportsEqualVariable(false,`${methodComponent}`,'props:[]'),
+    }
+    return test;
+  })();
   
   const programTests:TypescriptParserTest[] = [
-    componentFunctionPropertyTest,
+    /* componentFunctionPropertyTest,
     componentArrowFunctionPropertyTest,
     componentClassPropertyTest,
     componentMethodTest,
@@ -445,18 +542,14 @@ ${exports} = {
     typescriptTest,
     componentTypeCheckerTest,
     shorthandAssignmentTypeCheckerTest,
-    referencedPropsTest
+    referencedPropsTest,
+    exportsEqualsVariableTest,
+    exportsEqualsVariableTestTypescript, */
+    //referencedPropsEntriesTest,
+    referencedOptionsPropsEntriesTest
   ];
   programTests.forEach(test=> {
     it(test.description + ' PROGRAM', () => {
-      const exports = test.isJs?'module.exports':'export';
-        const file = `
-${test.preCode?test.preCode:''}
-${exports} = {
-  ${test.component},
-  ${test.props}
-}
-`
       //if working with real source file.....
       function createProgramFromString(contents:string,isJs:boolean){
         var compilerHost:ts.CompilerHost = {
@@ -486,7 +579,7 @@ ${exports} = {
         return ts.createProgram([`index.${isJs?'js':'ts'}`], {allowJs:true}, compilerHost);
       }
       
-      const program = createProgramFromString(file,test.isJs);
+      const program = createProgramFromString(test.file,test.isJs);
       const sourceFile = program.getSourceFile(`index.${test.isJs?'js':'ts'}`)
       const typeChecker = program.getTypeChecker();
       const {component,props} = extractComponentAndProps(sourceFile!,test.isJs,typeChecker);
