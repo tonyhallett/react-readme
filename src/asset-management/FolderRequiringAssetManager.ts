@@ -5,6 +5,7 @@ import { AssetManagerOptions } from "./AssetManagerOptions";
 import { IOptionsProvider } from "./IOptionsProvider";
 import { RequiringOptionsProvider } from "./RequiringOptionsProvider";
 import { ResolvedObjectPathFinder } from "./ResolvedObjectPathFinder";
+import { LanguageReader } from "./LanguageReader";
 
 export async function createFolderRequiringAssetManager(system:ISystem,requirer:IRequirer,componentSorter:IComponentSorter):Promise<IAssetManager>{
   const optionsProvider:IOptionsProvider = new RequiringOptionsProvider(system, requirer, new ResolvedObjectPathFinder(requirer));
@@ -16,7 +17,9 @@ export async function createFolderRequiringAssetManager(system:ISystem,requirer:
       system,
       requirer,
       optionsProvider.componentFolderOptionsProvider,
-      componentSorter),
+      componentSorter,
+      new LanguageReader(system)
+      ),
     system)
   return assetManager;
 }

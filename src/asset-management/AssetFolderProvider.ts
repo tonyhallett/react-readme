@@ -1,5 +1,6 @@
-import { CodeDetails, ComponentInfo, ISystem , IRequirer, ComponentInfoScreenshotOptions} from '../interfaces';
-import { IAssetFolderProvider, ComponentOptions, GlobalComponentOptions, CodeReplacer, ReadmeComponentScreenshotOptions, CodeInReadme } from './AssetManager';
+import { CodeDetails, ComponentInfo, ISystem , IRequirer} from '../interfaces';
+import { IAssetFolderProvider, ComponentOptions, GlobalComponentOptions, CodeReplacer, CodeInReadme } from './AssetManager';
+import { ILanguageReader } from './LanguageReader';
 export interface IAssetFolderComponentInfoProvider<T=any>{
   getComponentInfos(componentAssetsFolder: string, globalOptions: T&GlobalComponentOptions): Promise<ComponentInfo[]>
 }
@@ -15,6 +16,8 @@ export interface IComponentFolderOptionsProvider{
 }
 
 type CodeProvider = (isJs:boolean)=>Promise<CodeDetails>
+
+
 
 export class AssetFolderProvider implements IAssetFolderProvider {
   private languageLookup: Array<{
@@ -43,7 +46,9 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     private readonly system: ISystem, 
     private readonly requirer: IRequirer, 
     private readonly componentFolderOptionsProvider: IComponentFolderOptionsProvider, 
-    private readonly componentSorter: IComponentSorter) 
+    private readonly componentSorter: IComponentSorter,
+    private readonly languageReader: ILanguageReader
+    ) 
     {
     
   }
@@ -56,8 +61,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     throw new Error();
   }
   
-  private async getMergedOptions(componentAssetFolderPath: string): Promise<ComponentOptions> {
-    const componentOptions = await this.componentFolderOptionsProvider.getOptions(componentAssetFolderPath);
+  private getMergedOptions(componentOptions:ComponentOptions|undefined) {
     return { ...this.globalOptions, ...componentOptions };
   }
   private getAbsolutePathToJs(componentAssetFolderPath: string, jsPath: string): string {
@@ -67,17 +71,20 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     return this.system.path.join(componentAssetFolderPath, jsPath);
   }
   private async getComponentInfosForFolder(componentAssetFolderPath: string, componentAssetFolderName: string): Promise<ComponentInfo[]> {
-    const mergedOptions = await this.getMergedOptions(componentAssetFolderPath);
+    const componentOptions = await this.componentFolderOptionsProvider.getOptions(componentAssetFolderPath);
+    const mergedOptions = this.getMergedOptions(componentOptions);
+
     if (await this.hasProps(componentAssetFolderPath)) {
+      //when look at this might need to have removed props componentPath etc from merged
       return this.generateComponentInfosForProps(componentAssetFolderPath, mergedOptions);
     }
     const readme = await this.readComponentReadMe(componentAssetFolderPath);
 
-    const componentPath = mergedOptions && mergedOptions.componentPath ? this.getAbsolutePathToJs(componentAssetFolderPath, mergedOptions.componentPath) :
+    const componentPath = componentOptions && componentOptions.componentPath ? this.getAbsolutePathToJs(componentAssetFolderPath, componentOptions.componentPath) :
       this.system.path.join(componentAssetFolderPath, 'index.js');
     
     let codeProvider!:CodeProvider;
-    if(mergedOptions.component&&mergedOptions.componentPath===undefined){
+    if(componentOptions && componentOptions.component&&componentOptions.componentPath===undefined){
       codeProvider = (isJs) => this.componentFolderOptionsProvider.getComponentCode(componentAssetFolderPath,isJs);
     }else{
       codeProvider = (isJs) => this.readComponentCode(componentPath,isJs);
@@ -86,7 +93,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     
     
     
-    const Component = mergedOptions.component||this.getComponentByPath(componentPath, mergedOptions.componentKey);
+    let Component = componentOptions?.component||this.getComponentByPath(componentPath, componentOptions?.componentKey);
     const componentInfo: ComponentInfo = {
       codeDetails,
       readme,
@@ -114,16 +121,12 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     return componentInfos;
   }
   private async readComponentCode(componentPath: string, javascript: boolean): Promise<CodeDetails> {
-    const languageLookup = javascript ? [this.languageLookup[2]] : this.languageLookup;
-    const prefix = componentPath.substr(0, componentPath.length - 3);
-    const { didRead, read, readPath } = await this.system.fs.readUntilExists(...languageLookup.map(entry => `${prefix}${entry.extension}`));
-    if (!didRead) {
+    const result = await this.languageReader.read(componentPath,javascript);
+    if(result){
+      return result;
+    }else{
       throw new Error('no component file found');
     }
-    return {
-      code: read!,
-      language: languageLookup.find(entry => entry.extension === this.system.path.extname(readPath!))!.language
-    };
   }
   private getCodeReplacer(codeReplacer: CodeReplacer | undefined):(code:string)=>string {
     let replacer: (code: string) => string;
