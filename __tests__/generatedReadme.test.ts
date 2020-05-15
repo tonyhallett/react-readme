@@ -76,5 +76,31 @@ describe('GeneratedReadme result from toString', () => {
       })
       
     })
+
+    it('should have surrounded entries from surround with', () => {
+      const newlineSpacer = jest.fn().mockReturnValue('spaced');
+      const markdownImageCreator = jest.fn().mockReturnValue('markdown image');
+      
+      jest.clearAllMocks();
+      const generatedReadme = new GeneratedReadme(jest.fn(),markdownImageCreator,newlineSpacer);
+      generatedReadme.addComponentGeneration(
+        {code:'',language:''},
+        '',
+        {altText:'alt text',componentImagePath:'image path'}
+      );
+      generatedReadme.surroundWith('pre','post')
+      generatedReadme.toString();
+      const componentsReadmeParts = newlineSpacer.mock.calls[0][1];
+      expect(componentsReadmeParts.length).toBe(3);
+      expect(componentsReadmeParts[0].length).toBe(1);
+      expect(componentsReadmeParts[0][0]).toBe('pre');
+      expect(componentsReadmeParts[2].length).toBe(1);
+      expect(componentsReadmeParts[2][0]).toBe('post');
+    })
+
+    it('should have last entry as surround with post', () => {
+
+    })
+
   })
 })

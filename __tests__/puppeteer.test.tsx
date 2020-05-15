@@ -1,21 +1,9 @@
-import { generateWithPuppeteer, generateMultipleWithPuppeteer, ComponentScreenshot} from '../src/PuppeteerImageGenerator';
+import { generateMultipleWithPuppeteer, ComponentScreenshot} from '../src/PuppeteerImageGenerator';
 import React from 'react';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
-describe.skip('puppeteer generator', () => {
-  it('should not throw', async () => {
-    const Component: React.FC = () =>{
-      return <span>Hello</span>
-    }
-    await generateWithPuppeteer(Component,{});
-  })
-  it('should not throw with undefined options', async () => {
-    const Component: React.FC = () =>{
-      return <span>Hello</span>
-    }
-    await generateWithPuppeteer(Component,{puppeteer:undefined});
-  })
+describe('puppeteer generator', () => {
 
   it('should not throw with multiple', async () => {
     const Component: React.FC = () =>{

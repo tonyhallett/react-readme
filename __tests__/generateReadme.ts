@@ -26,7 +26,7 @@ const mockCreateGeneratedReadmeWriter = createGeneratedReadmeWriter as jest.Mock
 const mockPuppeteerImageGeneratorWriter = PuppeteerImageGeneratorWriter as jest.Mock;
 const mockGeneratedReadme = GeneratedReadme as jest.Mock;
 const mockCreateMarkdownImageCreator = createMarkdownImageCreator as jest.Mock;
-describe('generateReadme', () => {
+describe.skip('generateReadme', () => {
   beforeEach(()=>{
     jest.clearAllMocks();
     return executeGenerate();

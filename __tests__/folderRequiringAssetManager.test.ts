@@ -4,7 +4,6 @@ import { ResolvedObjectPathFinder } from '../src/asset-management/ResolvedObject
 import { AssetManagerOptions } from '../src/asset-management/AssetManagerOptions';
 import { AssetManager } from '../src/asset-management/AssetManager';
 import { AssetFolderProvider } from '../src/asset-management/AssetFolderProvider';
-import { SuffixComponentSorter } from '../src/SuffixComponentSorter';
 import { IAssetManager } from '../src/interfaces';
 
 jest.mock('../src/asset-management/ResolvedObjectPathFinder');

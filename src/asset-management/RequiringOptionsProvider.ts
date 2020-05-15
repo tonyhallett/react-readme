@@ -13,7 +13,7 @@ export class RequiringOptionsProvider implements IOptionsProvider {
     const readmeRequirer = new ReactReadmeRequirer(system, requirer);
     this.componentFolderOptionsProvider = new RequiringComponentFolderOptionsProvider(
       readmeRequirer, resolvedObjectPathFinder, 
-      new LanguageReader(system), new TypescriptOptionsParser());
+      new LanguageReader(system), new TypescriptOptionsParser(system));
     this.globalOptionsProvider = new RequiringGlobalOptionsProvider(readmeRequirer);
   }
 }
