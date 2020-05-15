@@ -20,21 +20,22 @@ export class AssetFolderProvider implements IAssetFolderProvider {
   private languageLookup: Array<{
     extension: string;
     language: string;
-  }> = [
-      // typescript files first
-      {
-        language: 'typescript',
-        extension: '.ts'
-      },
-      {
-        language: 'tsx',
-        extension: '.tsx'
-      },
-      {
-        language: 'javascript',
-        extension: '.js'
-      },
-    ];
+  }> = 
+  [
+    // typescript files first
+    {
+      language: 'typescript',
+      extension: '.ts'
+    },
+    {
+      language: 'tsx',
+      extension: '.tsx'
+    },
+    {
+      language: 'javascript',
+      extension: '.js'
+    },
+  ];
   private providers: IAssetFolderComponentInfoProvider[] = [];
   private globalOptions!: GlobalComponentOptions;
   private componentAssetsFolder!: string;
@@ -42,7 +43,10 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     private readonly system: ISystem, 
     private readonly requirer: IRequirer, 
     private readonly componentFolderOptionsProvider: IComponentFolderOptionsProvider, 
-    private readonly componentSorter: IComponentSorter) { }
+    private readonly componentSorter: IComponentSorter) 
+    {
+    
+  }
   
   private async hasProps(componentAssetFolder: string): Promise<boolean> {
     return await this.system.path.exists(this.system.path.join(componentAssetFolder, 'props.js')) ||
@@ -53,8 +57,8 @@ export class AssetFolderProvider implements IAssetFolderProvider {
   }
   
   private async getMergedOptions(componentAssetFolderPath: string): Promise<ComponentOptions> {
-    const folderOptions = await this.componentFolderOptionsProvider.getOptions(componentAssetFolderPath);
-    return { ...this.globalOptions, ...folderOptions };
+    const componentOptions = await this.componentFolderOptionsProvider.getOptions(componentAssetFolderPath);
+    return { ...this.globalOptions, ...componentOptions };
   }
   private getAbsolutePathToJs(componentAssetFolderPath: string, jsPath: string): string {
     if (this.system.path.isAbsolute(jsPath)) {
@@ -166,22 +170,6 @@ export class AssetFolderProvider implements IAssetFolderProvider {
       language
     };
   }
-  /* async getComponentCode(componentPath: string, codeInReadme: "None" | "Js" | undefined, codeReplacer: CodeReplacer | undefined): Promise<CodeDetails> {
-    if (codeInReadme === 'None') {
-      const noCodeDetails: CodeDetails = {
-        code: '',
-        language: ''
-      };
-      return Promise.resolve(noCodeDetails);
-    }
-    
-    const { code, language } = await this.readComponentCode(componentPath, codeInReadme === 'Js');
-
-    return {
-      code: this.getCodeReplacer(codeReplacer)(code),
-      language
-    };
-  } */
   getComponentByPath(componentPath: string, key:string|undefined): React.ComponentType {
     let Component:React.ComponentType|undefined
     const required = this.requirer.require(componentPath);

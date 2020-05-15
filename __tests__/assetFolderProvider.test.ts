@@ -449,15 +449,9 @@ describe('AssetFolderProvider', () => {
                 })
               })
             })
-            //then readmecode
-            
-            
           })
-          /* describe('readComponentCode', () => {
-            
-        
-            it('should readUntilExists index.js if codeInReadMe is Js and replace', async () => {
-              const codeReplacer = jest.fn().mockReturnValue('replaced');
+          describe('readComponentCode', () => {
+            it('should read and return (readUntilExists) js if codeInReadMe is Js', async () => {
               const readUntilExists = jest.fn().mockResolvedValue({
                 didRead:true,
                 read:'some js',
@@ -476,13 +470,10 @@ describe('AssetFolderProvider', () => {
                 }
               } as any,null as any,
               {} as any,noopSorter);
-              const componentCode = await assetFolderProvider.getComponentCode('readme-assets/components/Component/index.js', 'Js',codeReplacer);
-              expect(componentCode).toEqual({code:'replaced',language:'javascript'});
+              const componentCode = await assetFolderProvider['readComponentCode']('readme-assets/components/Component/index.js', true);
               expect(readUntilExists).toHaveBeenCalledWith('readme-assets/components/Component/index.js');
-              expect(codeReplacer).toHaveBeenCalledWith('some js');
-              expect(extname).toHaveBeenCalledWith('readme-assets/components/Component/index.js');
-              
-        
+              expect(componentCode.code).toBe('some js');
+              expect(componentCode.language).toBe('javascript');
             });
         
             it('should throw error if code is not found', () =>  {
@@ -503,11 +494,10 @@ describe('AssetFolderProvider', () => {
                 }
               } as any,null as any,{} as any,noopSorter);
         
-              return expect(assetFolderProvider.getComponentCode('readme-assets/components/Component/index.js', 'Js',codeReplacer)).rejects.toThrow('no component file found');
+              return expect(assetFolderProvider['readComponentCode']('readme-assets/components/Component/index.js', true)).rejects.toThrow('no component file found');
             })
            
             it('should readUntilExists with preference order ts, tsx, js if codeInReadMe is not Js and replace', async() => {
-              const codeReplacer = jest.fn().mockReturnValue('replaced');
               const readUntilExists = jest.fn().mockResolvedValue({
                 didRead:true,
                 read:'some ts',
@@ -525,18 +515,15 @@ describe('AssetFolderProvider', () => {
                   readUntilExists
                 }
               } as any,null as any, {} as any,noopSorter);
-              const componentCode = await assetFolderProvider.getComponentCode('readme-assets/components/Component/component.js', undefined,codeReplacer);
-              expect(componentCode).toEqual({code:'replaced',language:'typescript'});
-              expect(codeReplacer).toHaveBeenCalledWith('some ts');
+              const componentCode = await assetFolderProvider['readComponentCode']('readme-assets/components/Component/component.js', false);
+              expect(componentCode).toEqual({code:'some ts',language:'typescript'});
               expect(extname).toHaveBeenCalledWith('readme-assets/components/Component/component.ts');
-              expect(readUntilExists).toHaveBeenCalledWith('readme-assets/components/Component/component.ts','readme-assets/components/Component/component.tsx','readme-assets/components/Component/component.js');
+              expect(readUntilExists).toHaveBeenCalledWith(
+                'readme-assets/components/Component/component.ts',
+                'readme-assets/components/Component/component.tsx',
+                'readme-assets/components/Component/component.js');
             })
-
-            
-              
-              
-            })
-          }) */
+          })
         })
 
         it('should merge options from the provider with the global options', async () => {
