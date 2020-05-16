@@ -123,7 +123,10 @@ export class AssetFolderProvider implements IAssetFolderProvider {
   private async readComponentCode(componentPath: string, javascript: boolean): Promise<CodeDetails> {
     const result = await this.languageReader.read(componentPath,javascript);
     if(result){
-      return result;
+      return {
+        code:result.code,
+        language:result.language
+      };
     }else{
       throw new Error('no component file found');
     }

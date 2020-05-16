@@ -231,7 +231,7 @@ ${getExportsEquals(isJs,equalTo)}
         return fs.writeFile(path.join(testCodeDirectory,f.name),f.contents,'utf8')
       }));
       const typescriptOptionsParser = new TypescriptOptionsParser(new System());
-      const componentCode = typescriptOptionsParser.getComponentCode(path.join(testCodeDirectory,test.file.name));
+      const componentCode = typescriptOptionsParser.getComponentCode(path.join(testCodeDirectory,test.file.name),test.file.contents);
       expect(componentCode).toBe(test.expectedComponentText);
     })
   })

@@ -1,76 +1,48 @@
-import { LanguageReader } from "../src/asset-management/LanguageReader";
-import { CodeDetails } from "../src/interfaces";
+import { LanguageReader, LanguageReaderResult } from "../src/asset-management/LanguageReader";
 
+export type PromiseValue<PromiseType, Otherwise = PromiseType> = PromiseType extends Promise<infer Value> ? Value : Otherwise;
 
 describe('LanguageReader', () => {
-  describe('readOrFind', () => {
-    it('should readUntilExists and return undefined if did not read', async () => {
-      const languageReader = new LanguageReader(null as any);
-
-      const readUntilExists = jest.fn().mockResolvedValue({didRead:false})
-      languageReader['readUntilExists'] = readUntilExists;
-
-      const path='some path';
-      const isJs = {mock:'isJS'} as any;
-      expect(await languageReader['readOrFind'](path,isJs,null as any)).toBeUndefined();
-
-      expect(readUntilExists).toHaveBeenCalledWith(path,isJs);
-    })
-    it('should call the mapper with read,readPath,language and return the mapped result when reads',async () => {
-      const languageReader = new LanguageReader(null as any);
-      const readResult= {
-        didRead:true,
-        read:'read',
-        readPath:'readPath',
-        language:'language'
-      }
-      const readUntilExists = jest.fn().mockResolvedValue(readResult)
-      languageReader['readUntilExists'] = readUntilExists;
-      const path='some path';
-      const isJs = {mock:'isJS'} as any;
-      const mapper =jest.fn().mockReturnValue('mapped');
-
-      expect(await languageReader['readOrFind'](path,isJs,mapper)).toBe('mapped');
-      expect(mapper).toHaveBeenCalledWith('language','read','readPath');
-    })
-  })
   describe('read', () => {
-    it('should return readOrFind, mapping returning language and read as code', async () => {
+    it('should readUntilExists returning undefined if did not read', async () => {
       const languageReader = new LanguageReader(null as any);
-      const mappedResult= {
-        code:'read',
-        language:'language'
+      const readUntilExistsResult:PromiseValue<ReturnType<LanguageReader['readUntilExists']>>={
+        didRead:false,
+        language:undefined,
+        read:undefined,
+        readPath:undefined
       }
-      const readOrFind = jest.fn().mockResolvedValue(mappedResult)
-      languageReader['readOrFind'] = readOrFind;
+      const readUntilExists = jest.fn().mockResolvedValue(readUntilExistsResult);
+      languageReader['readUntilExists'] = readUntilExists;
+      const path = 'path.js';
+      const mockIsJs  = {is:'js'} as any;
 
-      const path='some path';
-      const isJs = {mock:'isJS'} as any;
-      
-      expect(await languageReader['read'](path,isJs)).toBe(mappedResult);
-      expect(readOrFind).toHaveBeenCalledWith(path, isJs,expect.anything());
-      expect(readOrFind.mock.calls[0][2]('language','read')).toEqual({code:'read',language:'language'})
-    });
-  })
-  describe('find', () => {
-    it('should return readOrFind, mapping returning language and readPath', async () => {
+
+      const result = await languageReader.read(path,mockIsJs);
+
+      expect(result).toBeUndefined();
+      expect(readUntilExists).toHaveBeenCalledWith(path,mockIsJs)
+    })
+    it('should return read, readPath and language if does exist', async () => {
       const languageReader = new LanguageReader(null as any);
-      const mappedResult= {
-        readPath:'readPath',
-        language:'language'
+      const readUntilExistsResult:PromiseValue<ReturnType<LanguageReader['readUntilExists']>>={
+        didRead:true,
+        language:'typescript',
+        read:'code',
+        readPath:'path'
       }
-      const readOrFind = jest.fn().mockResolvedValue(mappedResult)
-      languageReader['readOrFind'] = readOrFind;
+      const readUntilExists = jest.fn().mockResolvedValue(readUntilExistsResult);
+      languageReader['readUntilExists'] = readUntilExists;
 
-      const path='some path';
-      const isJs = {mock:'isJS'} as any;
+      const path = 'path.js';
+      const mockIsJs  = {is:'js'} as any;
+
+      const result = await languageReader.read(path,mockIsJs);
       
-     
-      expect(await languageReader['find'](path,isJs)).toBe(mappedResult);
-      expect(readOrFind).toHaveBeenCalledWith(path, isJs,expect.anything());
-      expect(readOrFind.mock.calls[0][2]('language','_','readPath')).toEqual({readPath:'readPath',language:'language'})
-    });
+      expect(result).toEqual({code:'code',language:'typescript',readPath:'path'});
+    })
   })
+  
   describe('readUntilExists', () => {
     it('should only read js if js true and return language javascript if exists', async () => {
       const readUntilExistsResult = {

@@ -1,6 +1,7 @@
 import { CodeReplacer, ComponentOptions, CodeInReadme, } from "../src/asset-management/AssetManager"
 import { AssetFolderProvider, IComponentSorter, SortedComponentFolder, IComponentFolderOptionsProvider} from "../src/asset-management/AssetFolderProvider"
 import { CodeDetails } from "../src/interfaces";
+import { LanguageReaderResult } from "../src/asset-management/LanguageReader";
 
 const noopSorter:IComponentSorter = {
   sort(componentFolderNames:string[]){
@@ -482,7 +483,7 @@ describe('AssetFolderProvider', () => {
           })
           describe('readComponentCode', () => {
             it('should use the language reader', async () => {
-              const readResult:CodeDetails = {code:'code',language:'language'};
+              const readResult:LanguageReaderResult = {code:'code',language:'typescript', readPath:'path'};
               const languageReaderRead = jest.fn().mockReturnValue(readResult);
               const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider({
               } as any,null as any,
@@ -491,7 +492,7 @@ describe('AssetFolderProvider', () => {
               } as any);
               const componentCode = await assetFolderProvider['readComponentCode']('readme-assets/components/Component/index.js', true);
               
-              expect(componentCode).toBe(readResult);
+              expect(componentCode).toEqual<CodeDetails>({code:'code',language:'typescript'});
             })
             
         

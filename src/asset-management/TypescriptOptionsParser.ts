@@ -180,10 +180,16 @@ function extractPropsActual(props:ts.Expression,propsProperty:string|undefined,t
 }
 
 
-function createProgram(rootName:string){
+function createProgram(rootName:string,rootCode:string){
   var compilerHost:ts.CompilerHost = {
     getSourceFile: function (filename, languageVersion) {
-      const contents = fs.readFileSync(filename,'utf8');
+      let contents:string
+      if(filename===rootName){
+        contents = rootCode;
+      }else{
+        contents = fs.readFileSync(filename,'utf8');
+      }
+      
       return ts.createSourceFile(filename, contents, languageVersion, true);
     },
     writeFile: function (name, text, writeByteOrderMark) { },
@@ -206,9 +212,9 @@ function createProgram(rootName:string){
 // for now will just do exports = 
 export class TypescriptOptionsParser implements IOptionsParser{
   constructor(private readonly system:ISystem){ }
-  getComponentCode(filePath: string): string|undefined {
+  getComponentCode(filePath: string,code:string): string|undefined {
     const isJs = this.system.path.extname(filePath) === '.js';
-    const program = createProgram(filePath);
+    const program = createProgram(filePath,code);
     const sourceFile = program.getSourceFile(filePath);
     const typeChecker = program.getTypeChecker();
     const {component} = extractComponentAndProps(sourceFile!,isJs,typeChecker);

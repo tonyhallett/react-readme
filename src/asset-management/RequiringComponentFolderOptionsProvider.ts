@@ -3,25 +3,12 @@ import { ReactReadmeRequirer } from "../ReactReadmeRequirer";
 import { ComponentOptions } from "./AssetManager";
 import { CodeDetails } from "../interfaces";
 import { ILanguageReader } from "./LanguageReader";
+import { ErrorWrapper } from "./ErrorWrapper";
 export interface IResolvedObjectPathFinder{
   resolve(resolvedObject:any, exclude:string):{path:string,key:string|undefined}|undefined;
 }
 export interface IOptionsParser{
-  getComponentCode(filePath:string):string|undefined
-}
-
-class ErrorWrapper extends Error{
-  private constructor(message:string,public readonly cause:any){
-    super(message)
-  }
-  static create(message:string,cause:any){
-    let fullMessage = message;
-    if(cause.message){
-      fullMessage+='\n';
-      fullMessage+=cause.message;
-    }
-    return new ErrorWrapper(fullMessage,cause);
-  }
+  getComponentCode(filePath:string,code:string):string|undefined
 }
 
 export class RequiringComponentFolderOptionsProvider implements IComponentFolderOptionsProvider{
@@ -33,11 +20,11 @@ export class RequiringComponentFolderOptionsProvider implements IComponentFolder
     ){}
   async getComponentCode(componentAssetFolderPath: string,isJs:boolean): Promise<CodeDetails> {
     const path = this.readmeRequirer.getReactReadmeInFolder(componentAssetFolderPath);
-    const result = await this.languageReader.find(path,isJs);
+    const result = await this.languageReader.read(path,isJs);
     if(result){
       let parsedCode:string|undefined;
       try{
-        parsedCode = this.optionsParser.getComponentCode(result.readPath);
+        parsedCode = this.optionsParser.getComponentCode(result.readPath,result.code);
       }catch(e){
         throw ErrorWrapper.create(`error parsing component in ${result.readPath}`,e)
       }
