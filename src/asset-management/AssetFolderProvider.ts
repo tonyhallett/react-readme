@@ -54,8 +54,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
   }
   
   private async hasProps(componentAssetFolder: string): Promise<boolean> {
-    return await this.system.path.exists(this.system.path.join(componentAssetFolder, 'props.js')) ||
-      await this.system.path.exists(this.system.path.join(componentAssetFolder, 'props'));
+    return false;
   }
   private generateComponentInfosForProps(componentAssetFolder: string, componentOptions: ComponentOptions): Promise<ComponentInfo[]> {
     throw new Error();

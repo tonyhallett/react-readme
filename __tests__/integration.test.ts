@@ -57,7 +57,7 @@ describe('generate', () => {
   }
   interface ComponentFolder{
     name:string,
-    code:GeneratedFile|Array<GeneratedFile>,
+    code:GeneratedFile|Array<GeneratedFile>|undefined,
     readme:string,
     reactReadme?:string
   }
@@ -644,7 +644,41 @@ describe('generate', () => {
     //const importedComponentInReadmePathFinderExportsDefaultTest = createComponentInReadmeTest('Component imported in readme, path found, exports default','default');
     const importedComponentInReadmePathTypescriptTest = createComponentInReadmeTest('Component imported in readme, path found, typescript used',undefined, true);
 
-
+    const inlineComponentInReadmeTest:NoPropsIntegrationTest = (()=> {
+      const component = '' + 
+`class {
+  render(){
+    return null;
+  }
+}`
+      const componentFolder:ComponentFolder = {
+        readme:'',
+        name:'InlineComponent',
+        code:undefined, 
+        reactReadme:`
+          module.exports = {
+            component:${component}
+          }
+        
+        `
+      }
+      const test:NoPropsIntegrationTest = {
+        description:'inline component',
+        expectedSurroundPost:undefined,
+        expectedSurroundPre:undefined,
+        folderArgs:[
+          [],
+          [componentFolder],
+          undefined,
+          undefined
+        ],
+        expectedAddComponentGenerations:[{
+          imageDetails:{altText:'InlineComponent',componentImagePath:path.join('README-assets','images','InlineComponent.png')},
+          codeDetails:{code:component,language:'javascript'}
+        }]
+      }
+      return test;
+    })();
     //#endregion
     
     
@@ -664,7 +698,8 @@ describe('generate', () => {
       importedComponentInReadmePathFinderExportPropertyTest,
       importedComponentInReadmePathTypescriptTest,
       componentScreenshotsTest,
-      componentScreenshotsExportDefaultTest
+      componentScreenshotsExportDefaultTest,
+      inlineComponentInReadmeTest
     ]
 
     
