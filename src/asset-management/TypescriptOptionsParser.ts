@@ -146,7 +146,7 @@ function extractProps(property:ts.ObjectLiteralElementLike,typeChecker:ts.TypeCh
   }
   return undefined;
 }
-function extractPropsActual(props:ts.Expression,propsProperty:string|undefined,typeChecker:ts.TypeChecker){
+function extractPropsActual2(props:ts.Expression,propsProperty:string|undefined,typeChecker:ts.TypeChecker){
   function getProps(propsOrObjectWithProps:ts.Expression){
     const objectLiteralExpression = getObjectLiteralFromExpressionOrReference(propsOrObjectWithProps,typeChecker);
     if(objectLiteralExpression){
@@ -177,6 +177,50 @@ function extractPropsActual(props:ts.Expression,propsProperty:string|undefined,t
     return props.elements.map(element => getProps(element));
   }
   return getProps(props);
+}
+function extractPropsFromArray(propsArray:ts.ArrayLiteralExpression,typeChecker:ts.TypeChecker){
+  function getProps(propsElement:ts.Expression):string|undefined{
+    //array spread?
+
+    //[props,options]
+    if(ts.isArrayLiteralExpression(propsElement)){
+      const tupleProps = propsElement.elements[0];
+      if(ts.isObjectLiteralExpression(tupleProps)){
+        return tupleProps.getText();
+      }else if(ts.isIdentifier(tupleProps)){
+        const variableSymbol = typeChecker.getSymbolAtLocation(tupleProps);
+        const declaration = getReferencedDeclaration(variableSymbol);
+        if(declaration && ts.isObjectLiteralExpression(declaration)){
+          return declaration.getText();
+        }
+      }
+    }else if(ts.isObjectLiteralExpression(propsElement)){
+      return propsElement.getText();
+    }else if(ts.isIdentifier(propsElement)){
+      const variableSymbol = typeChecker.getSymbolAtLocation(propsElement);
+      const declaration = getReferencedDeclaration(variableSymbol);
+      if(declaration){
+        return getProps(declaration);
+      }
+    }
+  }
+  const propsStrings =  propsArray.elements.map(element => getProps(element));
+  if(propsStrings.some(propsString => propsString===undefined)){
+    return undefined;
+  }    
+  return propsStrings as string[];
+}
+function extractPropsActual(props:ts.Expression,typeChecker:ts.TypeChecker):string[]|undefined{
+  if(ts.isArrayLiteralExpression(props)){
+    return extractPropsFromArray(props,typeChecker);
+  }else if(ts.isIdentifier(props)){
+    const variableSymbol = typeChecker.getSymbolAtLocation(props);
+    const declaration = getReferencedDeclaration(variableSymbol);
+    if(declaration && ts.isArrayLiteralExpression(declaration)){
+      return extractPropsFromArray(declaration,typeChecker);
+    }
+  }
+  
 }
 
 
@@ -218,7 +262,15 @@ export class TypescriptOptionsParser implements IOptionsParser{
     const sourceFile = program.getSourceFile(filePath);
     const typeChecker = program.getTypeChecker();
     const {component} = extractComponentAndProps(sourceFile!,isJs,typeChecker);
-    return component
+    return component;
+  }
+  getPropsCode(filePath:string, code:string):string[]|undefined{
+    const isJs = this.system.path.extname(filePath) === '.js';
+    const program = createProgram(filePath,code);
+    const sourceFile = program.getSourceFile(filePath);
+    const typeChecker = program.getTypeChecker();
+    const {props} = extractComponentAndProps(sourceFile!,isJs,typeChecker);
+    return extractPropsActual(props,typeChecker);
   }
 
 }

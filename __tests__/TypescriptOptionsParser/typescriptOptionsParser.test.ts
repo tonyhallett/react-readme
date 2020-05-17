@@ -12,12 +12,12 @@ describe('TypescriptOptionsParser', () => {
     contents:string,
     name:string
   }
-  interface TypescriptOptionsParserComponentTest{
+  interface TypescriptOptionsParserTest{
     description:string,
-    expectedComponentText:string,
+    expectedText:string|string[],
+    isPropsTest?:true,
     file:CodeFile,
     requiredFile?:CodeFile
-    
   }
   function getExportsEquals(isJs:boolean,equalTo:string){
     const exports = isJs?'module.exports':'export';
@@ -49,16 +49,112 @@ ${getExportsEquals(isJs,equalTo)}
 
   function getJsTsTests(isJs:boolean){
     const name = isJs?'react-readme.js':'react-readme.tsx';
-    const componentFunctionPropertyTest:TypescriptOptionsParserComponentTest=(()=> {
+    const oneOfEachPropsTest:TypescriptOptionsParserTest = {
+      description:'First props second tuple with options',
+      file:{
+        name:'react-readme.js',
+        contents:`
+        module.exports = {
+          props:[
+            {prop1:1},
+            [{prop2:2},{option:'some option'}]
+          ]
+        }
+        `
+      },
+      isPropsTest:true,
+      expectedText:['{prop1:1}','{prop2:2}']
+    }
+  
+    const propsVariableTest:TypescriptOptionsParserTest = {
+      description:'First props second tuple with options',
+      file:{
+        name:'react-readme.js',
+        contents:`
+        const propsVariable = [
+          {prop1:1},
+          [{prop2:2},{option:'some option'}]
+        ];
+        module.exports = {
+          props:propsVariable
+        }
+        `
+      },
+      isPropsTest:true,
+      expectedText:['{prop1:1}','{prop2:2}']
+    }
+    const propsVariableShorthandTest:TypescriptOptionsParserTest = {
+      description:'props shorthand reference',
+      file:{
+        name:'react-readme.js',
+        contents:`
+        const props = [
+          {prop1:1},
+          [{prop2:2},{option:'some option'}]
+        ];
+        module.exports = {
+          props
+        }
+        `
+      },
+      isPropsTest:true,
+      expectedText:['{prop1:1}','{prop2:2}']
+    }
+    const propsReferenceTest:TypescriptOptionsParserTest = {
+      description:'Referenced props',
+      file:{
+        name:'react-readme.js',
+        contents:`
+        const referencedProps = {prop1:1};
+        module.exports = {
+          props:[referencedProps]
+        }
+        `
+      },
+      isPropsTest:true,
+      expectedText:['{prop1:1}']
+    }
+    const propsWithOptionsReferenceTest:TypescriptOptionsParserTest = {
+      description:'Referenced props in tuple',
+      file:{
+        name:'react-readme.js',
+        contents:`
+        const referencedProps = {prop1:1};
+        module.exports = {
+          props:[[referencedProps,options:{}]]
+        }
+        `
+      },
+      isPropsTest:true,
+      expectedText:['{prop1:1}']
+    }
+    
+    const propsDoubleReference:TypescriptOptionsParserTest = {
+      description:'Double reference',
+      file:{
+        name:'react-readme.js',
+        contents:`
+        const referencedProps = {prop1:1};
+        const referencedPropsInTuple = {prop2:2};
+        const theExport = {
+          props:[referencedProps,[referencedPropsInTuple,options:{}]]
+        }
+        module.exports = theExport
+        `
+      },
+      isPropsTest:true,
+      expectedText:['{prop1:1}','{prop2:2}']
+    }
+    const componentFunctionPropertyTest:TypescriptOptionsParserTest=(()=> {
       const functionComponent = '' +
   `function (){
     // for js - React.createElement
     // for tsx - <div/>
   }`
   
-      const test:TypescriptOptionsParserComponentTest={
+      const test:TypescriptOptionsParserTest={
         description:'Component function property',
-        expectedComponentText:functionComponent,
+        expectedText:functionComponent,
         file:{
           contents:getExportsEqualsObjectLiteralFile(isJs,`component: ${functionComponent}`,'props:[]'),
           name
@@ -66,16 +162,16 @@ ${getExportsEquals(isJs,equalTo)}
       }
       return test;
     })();
-    const componentArrowFunctionPropertyTest:TypescriptOptionsParserComponentTest=(()=> {
+    const componentArrowFunctionPropertyTest:TypescriptOptionsParserTest=(()=> {
       const arrowFunctionComponent = '' +
   `() => {
     // for js - React.createElement
     // for tsx - <div/>
   }`
   
-      const test:TypescriptOptionsParserComponentTest={
+      const test:TypescriptOptionsParserTest={
         description:'Component arrow function property',
-        expectedComponentText:arrowFunctionComponent,
+        expectedText:arrowFunctionComponent,
         file:{
           contents:getExportsEqualsObjectLiteralFile(isJs,`component: ${arrowFunctionComponent}`,'props:[]'),
           name
@@ -83,7 +179,7 @@ ${getExportsEquals(isJs,equalTo)}
       }
       return test;
     })();
-    const componentClassPropertyTest:TypescriptOptionsParserComponentTest=(()=> {
+    const componentClassPropertyTest:TypescriptOptionsParserTest=(()=> {
       const classComponent = '' +
   `class Component {
     render(){
@@ -91,9 +187,9 @@ ${getExportsEquals(isJs,equalTo)}
     }
   }`
   
-      const test:TypescriptOptionsParserComponentTest={
+      const test:TypescriptOptionsParserTest={
         description:'Component class function property',
-        expectedComponentText:classComponent,
+        expectedText:classComponent,
         file:{
           contents:getExportsEqualsObjectLiteralFile(isJs,`component: ${classComponent}`,'props:[]'),
           name
@@ -102,16 +198,16 @@ ${getExportsEquals(isJs,equalTo)}
       return test;
     })();
     
-    const componentMethodTest:TypescriptOptionsParserComponentTest=(()=> {
+    const componentMethodTest:TypescriptOptionsParserTest=(()=> {
       const methodComponent = '' +
   `component(){
     // for js - React.createElement
     // for tsx - <div/>
   }`
   
-      const test:TypescriptOptionsParserComponentTest={
+      const test:TypescriptOptionsParserTest={
         description:'Component method',
-        expectedComponentText:methodComponent,
+        expectedText:methodComponent,
         file:{
           contents:getExportsEqualsObjectLiteralFile(isJs,`${methodComponent}`,'props:[]'),
           name
@@ -122,16 +218,16 @@ ${getExportsEquals(isJs,equalTo)}
   
   
     // require the type checker
-    const componentVariableTest:TypescriptOptionsParserComponentTest=(()=> {
+    const componentVariableTest:TypescriptOptionsParserTest=(()=> {
       const functionComponent = '' +
   `function (){
     // for js - React.createElement
     // for tsx - <div/>
   }`
   
-      const test:TypescriptOptionsParserComponentTest={
+      const test:TypescriptOptionsParserTest={
         description:'Component function property',
-        expectedComponentText:functionComponent,
+        expectedText:functionComponent,
         file:{
           contents:getExportsEqualsObjectLiteralFile(isJs,'component: componentVariable','props:[]',`const componentVariable = ${functionComponent}`),
           name
@@ -139,16 +235,16 @@ ${getExportsEquals(isJs,equalTo)}
       }
       return test;
     })();
-    const shorthandAssignmentTest:TypescriptOptionsParserComponentTest=(()=> {
+    const shorthandAssignmentTest:TypescriptOptionsParserTest=(()=> {
       const functionComponent = '' +
   `function (){
     // for js - React.createElement
     // for tsx - <div/>
   }`
   
-      const test:TypescriptOptionsParserComponentTest={
+      const test:TypescriptOptionsParserTest={
         description:'Component function property',
-        expectedComponentText:functionComponent,
+        expectedText:functionComponent,
         file:{
           contents:getExportsEqualsObjectLiteralFile(isJs,'component','props:[]',`const component = ${functionComponent}`),
           name
@@ -156,16 +252,16 @@ ${getExportsEquals(isJs,equalTo)}
       }
       return test;
     })();
-    const exportsEqualsVariableTest:TypescriptOptionsParserComponentTest = (()=> {
+    const exportsEqualsVariableTest:TypescriptOptionsParserTest = (()=> {
       const methodComponent = '' +
   `component(){
     // for js - React.createElement
     // for tsx - <div/>
   }`
   
-      const test:TypescriptOptionsParserComponentTest={
+      const test:TypescriptOptionsParserTest={
         description:'module.exports = someVar',
-        expectedComponentText:methodComponent,
+        expectedText:methodComponent,
         file:{
           contents:getExportsEqualVariable(isJs,`${methodComponent}`,'props:[]'),
           name
@@ -189,16 +285,16 @@ ${getExportsEquals(isJs,equalTo)}
     const extension = isJs?'js':'tsx';
     const requireLine = isJs ? `const required = require('./required').required;`:
     `import {required} from './required';`
-    const requiringTest:TypescriptOptionsParserComponentTest = (()=> {
+    const requiringTest:TypescriptOptionsParserTest = (()=> {
       const methodComponent = '' +
   `component(){
     // for js - React.createElement
     // for tsx - <div/>
   }`
   
-      const test:TypescriptOptionsParserComponentTest={
+      const test:TypescriptOptionsParserTest={
         description:`Requiring ${extension}`,
-        expectedComponentText:methodComponent,
+        expectedText:methodComponent,
         file:{
           contents:getExportsEqualsObjectLiteralFile(isJs,`${methodComponent}`,'props:[]',requireLine),
           name:`react-readme.${extension}`
@@ -212,12 +308,116 @@ ${getExportsEquals(isJs,equalTo)}
     })();
     return requiringTest;
   }
+
+  //will make a jsts test
+  const oneOfEachPropsTest:TypescriptOptionsParserTest = {
+    description:'First props second tuple with options',
+    file:{
+      name:'react-readme.js',
+      contents:`
+      module.exports = {
+        props:[
+          {prop1:1},
+          [{prop2:2},{option:'some option'}]
+        ]
+      }
+      `
+    },
+    isPropsTest:true,
+    expectedText:['{prop1:1}','{prop2:2}']
+  }
+
+  const propsVariableTest:TypescriptOptionsParserTest = {
+    description:'First props second tuple with options',
+    file:{
+      name:'react-readme.js',
+      contents:`
+      const propsVariable = [
+        {prop1:1},
+        [{prop2:2},{option:'some option'}]
+      ];
+      module.exports = {
+        props:propsVariable
+      }
+      `
+    },
+    isPropsTest:true,
+    expectedText:['{prop1:1}','{prop2:2}']
+  }
+  const propsVariableShorthandTest:TypescriptOptionsParserTest = {
+    description:'props shorthand reference',
+    file:{
+      name:'react-readme.js',
+      contents:`
+      const props = [
+        {prop1:1},
+        [{prop2:2},{option:'some option'}]
+      ];
+      module.exports = {
+        props
+      }
+      `
+    },
+    isPropsTest:true,
+    expectedText:['{prop1:1}','{prop2:2}']
+  }
+  const propsReferenceTest:TypescriptOptionsParserTest = {
+    description:'Referenced props',
+    file:{
+      name:'react-readme.js',
+      contents:`
+      const referencedProps = {prop1:1};
+      module.exports = {
+        props:[referencedProps]
+      }
+      `
+    },
+    isPropsTest:true,
+    expectedText:['{prop1:1}']
+  }
+  const propsWithOptionsReferenceTest:TypescriptOptionsParserTest = {
+    description:'Referenced props in tuple',
+    file:{
+      name:'react-readme.js',
+      contents:`
+      const referencedProps = {prop1:1};
+      module.exports = {
+        props:[[referencedProps,options:{}]]
+      }
+      `
+    },
+    isPropsTest:true,
+    expectedText:['{prop1:1}']
+  }
   
-  const tests:TypescriptOptionsParserComponentTest[] = [
-    ...getJsTsTests(false),
+  const propsDoubleReference:TypescriptOptionsParserTest = {
+    description:'Double reference',
+    file:{
+      name:'react-readme.js',
+      contents:`
+      const referencedProps = {prop1:1};
+      const referencedPropsInTuple = {prop2:2};
+      const theExport = {
+        props:[referencedProps,[referencedPropsInTuple,options:{}]]
+      }
+      module.exports = theExport
+      `
+    },
+    isPropsTest:true,
+    expectedText:['{prop1:1}','{prop2:2}']
+  }
+  
+  const tests:TypescriptOptionsParserTest[] = [
+    /* ...getJsTsTests(false),
     ...getJsTsTests(true),
     createRequiringTest(true),
-    createRequiringTest(false)
+    createRequiringTest(false) */
+    //oneOfEachPropsTest
+    //propsVariableTest
+    //propsReferenceTest
+    //propsWithOptionsReferenceTest
+    //propsDoubleReference,
+    propsVariableShorthandTest
   ];
   tests.forEach( (test,i) => {
     it(test.description, async () => {
@@ -231,8 +431,14 @@ ${getExportsEquals(isJs,equalTo)}
         return fs.writeFile(path.join(testCodeDirectory,f.name),f.contents,'utf8')
       }));
       const typescriptOptionsParser = new TypescriptOptionsParser(new System());
-      const componentCode = typescriptOptionsParser.getComponentCode(path.join(testCodeDirectory,test.file.name),test.file.contents);
-      expect(componentCode).toBe(test.expectedComponentText);
+      let parsed:string|string[]|undefined;
+      if(test.isPropsTest){
+        parsed = typescriptOptionsParser.getPropsCode(path.join(testCodeDirectory,test.file.name),test.file.contents);
+      }else{
+        parsed = typescriptOptionsParser.getComponentCode(path.join(testCodeDirectory,test.file.name),test.file.contents);
+      }
+      
+      expect(parsed).toEqual(test.expectedText);
     })
   })
   

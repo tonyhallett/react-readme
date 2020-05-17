@@ -55,11 +55,14 @@ describe('generate', () => {
   interface GeneratedFile{
     fileName:string,contents:string
   }
+  type CodeExtension = 'js'|'ts'|'tsx'
+  type GeneratedReactReadme = {contents:string,extension:CodeExtension}
   interface ComponentFolder{
     name:string,
     code:GeneratedFile|Array<GeneratedFile>|undefined,
     readme:string,
     reactReadme?:string
+    getReactReadmes?:()=>Array<GeneratedReactReadme>
   }
   interface MainReadme{
     readme:string,
@@ -141,6 +144,11 @@ describe('generate', () => {
         }
         if(componentFolder.reactReadme){
           await this.ensureAndWriteInReadmeAssets(componentFolder.reactReadme,'components',name,'react-readme.js');
+        }
+        if(componentFolder.getReactReadmes){
+          await Promise.all(componentFolder.getReactReadmes().map(reactReadme => {
+            this.ensureAndWriteInReadmeAssets(reactReadme.contents,'components',name,`react-readme.${reactReadme.extension}`);
+          }));
         }
         await this.ensureAndWriteInReadmeAssets(componentFolder.readme,'components',name,'README.md');
       }
@@ -644,26 +652,61 @@ describe('generate', () => {
     //const importedComponentInReadmePathFinderExportsDefaultTest = createComponentInReadmeTest('Component imported in readme, path found, exports default','default');
     const importedComponentInReadmePathTypescriptTest = createComponentInReadmeTest('Component imported in readme, path found, typescript used',undefined, true);
 
-    const inlineComponentInReadmeTest:NoPropsIntegrationTest = (()=> {
-      const component = '' + 
-`class {
-  render(){
-    return null;
-  }
-}`
+
+    function createInlineComponentInReadmeTest(reactReadmeExtension:CodeExtension):NoPropsIntegrationTest{
+      
+      const getReactReadmeAndComponent=(extension:CodeExtension)=>{
+        function getExportsEquals(isJs:boolean,equalTo:string){
+          const exports = isJs?'module.exports':'export';
+          return `${exports} = ${equalTo}`;
+        }
+        const component = '' + 
+  `class {
+    render(){
+      return null;//${extension}
+    }
+  }`;
+    
+    const componentExports =`{
+      component:${component}
+    }`
+    const reactReadme = getExportsEquals(extension==='js',componentExports);
+  
+      return {component,reactReadme}
+      }
+      const expectedLanguage = (()=> {
+        const expectedLanguageLookup = new Map<string,string>();
+        expectedLanguageLookup.set('js','javascript');
+        expectedLanguageLookup.set('ts','typescript');
+        expectedLanguageLookup.set('tsx','tsx');
+
+        return expectedLanguageLookup.get(reactReadmeExtension);
+      })();
+      
+
+      const jsComponentAndReadme = getReactReadmeAndComponent('js');
+      let expectedReadmeComponent = jsComponentAndReadme.component;
+
       const componentFolder:ComponentFolder = {
         readme:'',
         name:'InlineComponent',
         code:undefined, 
-        reactReadme:`
-          module.exports = {
-            component:${component}
-          }
-        
-        `
+      }
+      if(reactReadmeExtension==='js'){
+        componentFolder.reactReadme = jsComponentAndReadme.reactReadme;
+      }else{
+        const expectedComponentAndReadme = getReactReadmeAndComponent(reactReadmeExtension);
+        expectedReadmeComponent=expectedComponentAndReadme.component;
+        componentFolder.getReactReadmes=()=>{
+          const reactReadmes:Array<GeneratedReactReadme> =   [
+            {contents:jsComponentAndReadme.reactReadme,extension:'js'},
+            {contents:expectedComponentAndReadme.reactReadme,extension:reactReadmeExtension}
+          ]
+          return reactReadmes;
+        }
       }
       const test:NoPropsIntegrationTest = {
-        description:'inline component',
+        description:`inline component ${reactReadmeExtension}`,
         expectedSurroundPost:undefined,
         expectedSurroundPre:undefined,
         folderArgs:[
@@ -674,11 +717,17 @@ describe('generate', () => {
         ],
         expectedAddComponentGenerations:[{
           imageDetails:{altText:'InlineComponent',componentImagePath:path.join('README-assets','images','InlineComponent.png')},
-          codeDetails:{code:component,language:'javascript'}
-        }]
+          codeDetails:{code:expectedReadmeComponent,language:expectedLanguage!}
+        }],
+        additionalExpectations:()=>{
+          const componentScreenshots = mockPuppeteerGenerateAndWrite.mock.calls[0][0];
+          expect((componentScreenshots[0].Component as any).toString()).toBe(jsComponentAndReadme.component);
+        }
       }
       return test;
-    })();
+    }
+
+    const inlineComponentTests = (['js','ts','tsx'] as Array<CodeExtension>).map(ext => createInlineComponentInReadmeTest(ext));
     //#endregion
     
     
@@ -699,7 +748,7 @@ describe('generate', () => {
       importedComponentInReadmePathTypescriptTest,
       componentScreenshotsTest,
       componentScreenshotsExportDefaultTest,
-      inlineComponentInReadmeTest
+      ...inlineComponentTests
     ]
 
     
