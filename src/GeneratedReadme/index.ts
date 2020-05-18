@@ -24,16 +24,11 @@ export class GeneratedReadme implements IGeneratedReadme {
     this.componentsReadmeEntries.push(componentReadmeEntries);
   }
 
-  private createMarkdownCode(code: string, language: string):string | undefined{
-    if(code){
-      return this.markdownCodeCreator(code,language);
-    }
-  }
-  addComponentGeneration(codeDetails: CodeDetails, componentReadme: string, imageDetails: ImageDetails): void {
+  addComponentGeneration(codeDetails: CodeDetails|undefined, componentReadme: string|undefined, imageDetails: ImageDetails|undefined): void {
     this.addEntries(
       () => componentReadme,
-      () => this.markdownImageCreator(imageDetails.componentImagePath, imageDetails.altText),
-      () => this.createMarkdownCode(codeDetails.code, codeDetails.language)
+      () => imageDetails===undefined?undefined:this.markdownImageCreator(imageDetails.componentImagePath, imageDetails.altText),
+      () => codeDetails===undefined?undefined:this.markdownCodeCreator(codeDetails.code,codeDetails.language)
     );
   }
   surroundWith(pre: string, post: string): void {

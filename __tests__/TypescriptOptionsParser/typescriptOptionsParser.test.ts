@@ -38,9 +38,10 @@ ${getExportsEquals(isJs,equalTo)}
 
     return file;
   }
-  function getExportsEqualVariable(isJs:boolean,component:string,props:string){
+  function getExportsEqualVariable(isJs:boolean,component:string,props:string,pre?:string){
     const objectLiteral = getObjectLiteral(component,props);
     const file = `
+    ${pre?pre:''}
     const exportsVariable = ${objectLiteral};
     ${getExportsEquals(isJs,'exportsVariable')}
     `;
@@ -49,18 +50,16 @@ ${getExportsEquals(isJs,equalTo)}
 
   function getJsTsTests(isJs:boolean){
     const name = isJs?'react-readme.js':'react-readme.tsx';
+    
+
     const oneOfEachPropsTest:TypescriptOptionsParserTest = {
       description:'First props second tuple with options',
       file:{
-        name:'react-readme.js',
-        contents:`
-        module.exports = {
-          props:[
-            {prop1:1},
-            [{prop2:2},{option:'some option'}]
-          ]
-        }
-        `
+        name,
+        contents:getExportsEqualsObjectLiteralFile(isJs,'component: 1',`props:[
+          {prop1:1},
+          [{prop2:2},{option:'some option'}]
+        ]`)
       },
       isPropsTest:true,
       expectedText:['{prop1:1}','{prop2:2}']
@@ -69,33 +68,26 @@ ${getExportsEquals(isJs,equalTo)}
     const propsVariableTest:TypescriptOptionsParserTest = {
       description:'First props second tuple with options',
       file:{
-        name:'react-readme.js',
-        contents:`
+        name,
+        contents:getExportsEqualsObjectLiteralFile(isJs,'component: 1',`props:propsVariable`,`
         const propsVariable = [
           {prop1:1},
           [{prop2:2},{option:'some option'}]
         ];
-        module.exports = {
-          props:propsVariable
-        }
-        `
-      },
+        `)},
       isPropsTest:true,
       expectedText:['{prop1:1}','{prop2:2}']
     }
     const propsVariableShorthandTest:TypescriptOptionsParserTest = {
       description:'props shorthand reference',
       file:{
-        name:'react-readme.js',
-        contents:`
+        name,
+        contents:getExportsEqualsObjectLiteralFile(isJs,'component: 1',`props`,`
         const props = [
           {prop1:1},
           [{prop2:2},{option:'some option'}]
         ];
-        module.exports = {
-          props
-        }
-        `
+        `)
       },
       isPropsTest:true,
       expectedText:['{prop1:1}','{prop2:2}']
@@ -103,13 +95,10 @@ ${getExportsEquals(isJs,equalTo)}
     const propsReferenceTest:TypescriptOptionsParserTest = {
       description:'Referenced props',
       file:{
-        name:'react-readme.js',
-        contents:`
+        name,
+        contents:getExportsEqualsObjectLiteralFile(isJs,'component: 1','props:[referencedProps]',`
         const referencedProps = {prop1:1};
-        module.exports = {
-          props:[referencedProps]
-        }
-        `
+        `)
       },
       isPropsTest:true,
       expectedText:['{prop1:1}']
@@ -117,13 +106,10 @@ ${getExportsEquals(isJs,equalTo)}
     const propsWithOptionsReferenceTest:TypescriptOptionsParserTest = {
       description:'Referenced props in tuple',
       file:{
-        name:'react-readme.js',
-        contents:`
+        name,
+        contents:getExportsEqualsObjectLiteralFile(isJs,'component: 1','props:[[referencedProps,options:{}]]',`
         const referencedProps = {prop1:1};
-        module.exports = {
-          props:[[referencedProps,options:{}]]
-        }
-        `
+        `)
       },
       isPropsTest:true,
       expectedText:['{prop1:1}']
@@ -132,15 +118,11 @@ ${getExportsEquals(isJs,equalTo)}
     const propsDoubleReference:TypescriptOptionsParserTest = {
       description:'Double reference',
       file:{
-        name:'react-readme.js',
-        contents:`
+        name,
+        contents: getExportsEqualVariable(isJs,'component:1','props:[referencedProps,[referencedPropsInTuple,options:{}]]',`
         const referencedProps = {prop1:1};
         const referencedPropsInTuple = {prop2:2};
-        const theExport = {
-          props:[referencedProps,[referencedPropsInTuple,options:{}]]
-        }
-        module.exports = theExport
-        `
+        `)
       },
       isPropsTest:true,
       expectedText:['{prop1:1}','{prop2:2}']
@@ -276,7 +258,13 @@ ${getExportsEquals(isJs,equalTo)}
       componentMethodTest,
       componentVariableTest,
       shorthandAssignmentTest,
-      exportsEqualsVariableTest
+      exportsEqualsVariableTest,
+      oneOfEachPropsTest,
+      propsVariableTest,
+      propsVariableShorthandTest,
+      propsReferenceTest,
+      propsWithOptionsReferenceTest,
+      propsDoubleReference
     ]
     tests.forEach(t => t.description += isJs?' JS':' TSX');
     return tests;
@@ -408,16 +396,16 @@ ${getExportsEquals(isJs,equalTo)}
   }
   
   const tests:TypescriptOptionsParserTest[] = [
-    /* ...getJsTsTests(false),
+    ...getJsTsTests(false),
     ...getJsTsTests(true),
     createRequiringTest(true),
-    createRequiringTest(false) */
+    createRequiringTest(false)
     //oneOfEachPropsTest
     //propsVariableTest
     //propsReferenceTest
     //propsWithOptionsReferenceTest
     //propsDoubleReference,
-    propsVariableShorthandTest
+    //propsVariableShorthandTest
   ];
   tests.forEach( (test,i) => {
     it(test.description, async () => {

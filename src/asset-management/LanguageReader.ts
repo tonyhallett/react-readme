@@ -49,29 +49,12 @@ export class LanguageReader implements ILanguageReader {
     const prefix = path.substr(0, path.length - 3);
     return languageLookup.map(entry => `${prefix}${entry.extension}`);
   }
-  /* private async readOrFind<T>(path: string, javascript: boolean,mapper:(language:string,read:string,readPath:string)=>T):Promise<T|undefined> {
-    const { didRead, read, readPath, language } = await this.readUntilExists(path, javascript);
-    if (!didRead) {
-      return undefined;
-    }
-    return mapper(language!,read!,readPath!);
-  } */
   async read(path: string, javascript: boolean): Promise<LanguageReaderResult | undefined> {
-    /* return this.readOrFind(path, javascript, (language,read) => ({
-      code: read,
-      language:language
-    })) */
     const { didRead, read, readPath, language } = await this.readUntilExists(path, javascript);
     if (!didRead) {
       return undefined;
     }
     return {code:read!,language:language!,readPath:readPath!};
-    //return mapper(language!,read!,readPath!);
   }
-  /* async find(path: string, javascript: boolean): Promise<{language:string,readPath:string} | undefined> {
-    return this.readOrFind(path, javascript, (language,_,readPath) => ({
-      readPath: readPath,
-      language:language
-    }))
-  } */
+  
 }

@@ -1,4 +1,4 @@
-import { CodeReplacer, ComponentOptions, CodeInReadme, } from "../src/asset-management/AssetManager"
+import { CodeReplacer, ComponentOptions, CodeInReadme, ComponentOptionsCommon, } from "../src/asset-management/AssetManager"
 import { AssetFolderProvider, IComponentSorter, SortedComponentFolder, IComponentFolderOptionsProvider} from "../src/asset-management/AssetFolderProvider"
 import { CodeDetails } from "../src/interfaces";
 import { LanguageReaderResult } from "../src/asset-management/LanguageReader";
@@ -97,7 +97,7 @@ describe('AssetFolderProvider', () => {
         describe('component readme', () => {
           it('should have read component readme from component folder in props',async () => {
             const readComponentReadMe = jest.fn().mockResolvedValue('some readme');
-            const hasProps = jest.fn().mockResolvedValue(false);
+            
             const assetFolderProvider = new AssetFolderProvider(
               {
                 path:{
@@ -111,7 +111,7 @@ describe('AssetFolderProvider', () => {
               noopSorter,
               {} as any
             );
-            assetFolderProvider['hasProps'] = hasProps;
+            
             assetFolderProvider['getMergedOptions']=()=>({});
             assetFolderProvider.readComponentReadMe = readComponentReadMe;
             assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
@@ -120,7 +120,6 @@ describe('AssetFolderProvider', () => {
             const componentAssetFolderPath = 'readme-assets/components/Component';
             const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
             
-            expect(hasProps).toHaveBeenCalledWith(componentAssetFolderPath);
             expect(readComponentReadMe).toHaveBeenCalledWith(componentAssetFolderPath);
             expect(componentInfos.length).toBe(1);
             expect(componentInfos[0].readme).toBe('some readme');
@@ -178,7 +177,7 @@ describe('AssetFolderProvider', () => {
                 component
               } as ComponentOptions)
             } as any,noopSorter,{} as any);
-            assetFolderProvider['hasProps'] = () => Promise.resolve(false);
+            
             const mergedOptions = {
               screenshotOptions:{
                 type:'jpeg'
@@ -204,7 +203,7 @@ describe('AssetFolderProvider', () => {
                 component
               })
             } as any,noopSorter,{} as any);
-            assetFolderProvider['hasProps'] = () => Promise.resolve(false);
+            
             const mergedOptions = {
               screenshotOptions:{
                 type:'jpeg'
@@ -228,7 +227,7 @@ describe('AssetFolderProvider', () => {
               } as any, {} as any,{
                 getOptions:()=>Promise.resolve({})
               } as any,noopSorter,{} as any);
-              assetFolderProvider['hasProps'] = () => Promise.resolve(false);
+              
               const mergedOptions = {
                 screenshotOptions:{
                   type:'jpeg'
@@ -306,7 +305,6 @@ describe('AssetFolderProvider', () => {
             const componentCode:CodeDetails = {code:'some code',language:'language'}
             const getComponentCode=jest.fn().mockResolvedValue(componentCode);
 
-            const hasProps = jest.fn().mockResolvedValue(false);
             const assetFolderProvider = new AssetFolderProvider({
               path:{
                 join(...paths:string[]){return paths.join('/')}
@@ -314,7 +312,6 @@ describe('AssetFolderProvider', () => {
             } as any, {} as any,{
               getOptions:()=>Promise.resolve({})
             } as any,noopSorter,{} as any);
-            assetFolderProvider['hasProps'] = hasProps;
             const mergedOptions = {
               codeReplacer:()=>{},
               codeInReadme:'Js'
@@ -329,12 +326,46 @@ describe('AssetFolderProvider', () => {
             expect(componentInfos[0].codeDetails).toEqual(componentCode);
           })
           describe('getting the component code', () => {
+            it('should be determined by the merged options', async () => {
+              const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider(
+                {
+                  path:{
+                    join(...parts:string[]){
+                      return parts.join('/');
+                    }
+                  }
+                } as any,
+                null as any,
+                {
+                  getOptions(){
+                    return Promise.resolve({})
+                  }
+                } as any,
+                noopSorter,
+                {} as any);
+              
+              assetFolderProvider['readComponentReadMe'] = () => Promise.resolve('')
+              assetFolderProvider['getComponentByPath'] = () => Promise.resolve({}) as any;
+
+              const getComponentCode = jest.fn().mockResolvedValue({});
+              assetFolderProvider['getComponentCode'] = getComponentCode;
+
+
+              const mergedOptions:ComponentOptionsCommon = {
+                codeReplacer:(code:string) => code,
+                codeInReadme:'MockOption' as any
+              }
+              assetFolderProvider['getMergedOptions'] = () => (mergedOptions);
+
+              await assetFolderProvider['getComponentInfosForFolder']('','');
+              expect(getComponentCode).toHaveBeenCalledWith(expect.anything(),mergedOptions.codeInReadme, mergedOptions.codeReplacer)
+            })
             it('should return empty if mergedOptions.codeInReadme is None', async () => {
               const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider(null as any,null as any,{} as any,noopSorter,{} as any);
               const componentCode = await assetFolderProvider.getComponentCode(null as any, 'None',null as any);
               expect(componentCode).toEqual({code:'',language:''})
             })
-            describe('it should call the code replacer if mergedOptions.codeInReadme is not None', () => {
+            describe('it should call the code provider if mergedOptions.codeInReadme is not None', () => {
               interface CodeProviderTest{
                 codeInReadme:Exclude<CodeInReadme,'None'>|undefined,
                 expectedCodeProviderIsJs:boolean
@@ -361,13 +392,7 @@ describe('AssetFolderProvider', () => {
 
             })
             describe('replacing the provided code', () => {
-              it('should be replaced', async () => {
-                const codeProvider = jest.fn().mockReturnValue({code:'some code ',language:'language'})
-                const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider(null as any,null as any,{} as any,noopSorter,{} as any);
-                assetFolderProvider['getCodeReplacer'] = () => code => code + 'replaced';
-                const componentCode = await assetFolderProvider.getComponentCode(codeProvider, undefined, undefined);
-                expect(componentCode).toEqual<CodeDetails>({code:'some code replaced',language:'language'});
-              })
+              
               describe('code replacer', () => {
                 interface CodeReplacementTest{
                   description:string,
@@ -462,16 +487,11 @@ describe('AssetFolderProvider', () => {
                     } as any,
                     noopSorter,{} as any);
 
-                  assetFolderProvider['hasProps'] = () => Promise.resolve(false);
-                  
-                 
-
                   assetFolderProvider['getMergedOptions']=()=>({});
                   assetFolderProvider['getAbsolutePathToJs'] = () => '';
                   assetFolderProvider['readComponentCode'] = readComponentCode;
                   assetFolderProvider['readComponentReadMe'] = () => Promise.resolve('');
                   assetFolderProvider['getComponentByPath'] = () => ({} as any)
-      
                   
                   await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
                   
@@ -495,7 +515,6 @@ describe('AssetFolderProvider', () => {
               expect(componentCode).toEqual<CodeDetails>({code:'code',language:'typescript'});
             })
             
-        
             it('should throw error if code is not found', async() =>  {
               const languageReaderRead = jest.fn().mockReturnValue(undefined);
               const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider({
@@ -506,46 +525,79 @@ describe('AssetFolderProvider', () => {
               
               return expect(assetFolderProvider['readComponentCode']('readme-assets/components/Component/index.js', true)).rejects.toThrow('no component file found');
             })
-           
             
           })
         })
-
-        it('should merge options from the provider with the global options', async () => {
-          const optionsProvider:IComponentFolderOptionsProvider = {
-            getOptions(path){
-              return Promise.resolve({
-                aFolderOption:'',
-                codeInReadme:'Js'
-              } as any)
-            },
-            getComponentCode:()=>Promise.resolve(null as any)
+        describe('merging options from provider with global options', () => {
+          interface MergeOptionsTest{
+            description:string,
+            componentOptions:ComponentOptions,
+            globalOptions:ComponentOptionsCommon,
+            expectedMergedOptions:ComponentOptionsCommon
           }
-          const assetFolderProvider = new AssetFolderProvider({
-            fs:{
-              readdir:()=>Promise.resolve(['Component'])
+          const tests:MergeOptionsTest[] = [
+            {
+              description:'should have global options not in component options',
+              globalOptions:{
+                codeInReadme:'None'
+              },
+              componentOptions:{},
+              expectedMergedOptions:{
+                codeInReadme:'None'
+              }
             },
-            path:{
-              join(...paths:string[]){
-                return paths.join('/');
+            {
+              description:'should override gloabl options withcomponent options',
+              globalOptions:{
+                codeInReadme:'None'
+              },
+              componentOptions:{
+                codeInReadme:'Js'
+              },
+              expectedMergedOptions:{
+                codeInReadme:'Js'
               }
             }
-          } as any,
-          undefined as any,
-          optionsProvider,
-          {
-            sort:(folderNames:string[])=>[{componentFolderName:'',parsedName:''}]
-          },{} as any
-          );
-
-          assetFolderProvider['hasProps'] =()=>Promise.resolve(true);
-          const generateComponentInfosForProps = jest.fn().mockResolvedValue([]);
-          assetFolderProvider['generateComponentInfosForProps'] = generateComponentInfosForProps
-
-          const globalCodeReplacer:CodeReplacer = code => code;
-          await assetFolderProvider.getComponentInfos('',{codeInReadme:'None',codeReplacer:globalCodeReplacer});
-          expect(generateComponentInfosForProps.mock.calls[0][1]).toEqual({aFolderOption:'',codeReplacer:globalCodeReplacer,codeInReadme:'Js'})
+          ]
+          tests.forEach(test => {
+            it(test.description, async () => {
+              const optionsProvider:IComponentFolderOptionsProvider = {
+                getOptions(){
+                  return Promise.resolve(test.componentOptions)
+                },
+                getComponentCode:()=>Promise.resolve(null as any)
+              } as any;
+              const assetFolderProvider = new AssetFolderProvider({
+                fs:{
+                  readdir:()=>Promise.resolve(['Component'])
+                },
+                path:{
+                  join(...paths:string[]){
+                    return paths.join('/');
+                  }
+                }
+              } as any,
+              undefined as any,
+              optionsProvider,
+              {
+                sort:(folderNames:string[])=>[{componentFolderName:'',parsedName:''}]
+              },{} as any
+              );
+              assetFolderProvider['readComponentReadMe']=()=>Promise.resolve('');
+              assetFolderProvider['getComponentCode'] = ()=>Promise.resolve('') as any;
+              assetFolderProvider['getComponentByPath'] =()=> ({} as any)
+    
+    
+              const spiedGetMergedOptions = jest.spyOn<any,any>(assetFolderProvider,'getMergedOptions');
+             
+              await assetFolderProvider.getComponentInfos('',test.globalOptions);
+              const mergedOptions = spiedGetMergedOptions.mock.results[0].value;
+              expect(mergedOptions).toEqual(test.expectedMergedOptions);
+            })
+          });
+          
         })
+        
       })
         
       describe('component path', () => {
@@ -578,8 +630,6 @@ describe('AssetFolderProvider', () => {
             const readComponentCode = jest.fn().mockResolvedValue('');
             const getComponentByPath = jest.fn().mockResolvedValue('');
 
-            const hasProps = jest.fn().mockResolvedValue(false);
-
             const options = {
             } as ComponentOptions;
             if(test.isAbsolute!==undefined){
@@ -594,7 +644,6 @@ describe('AssetFolderProvider', () => {
             } as any, {} as any,{
               getOptions:()=>Promise.resolve(options)
             } as any,noopSorter,{} as any);
-            assetFolderProvider['hasProps'] = hasProps;
 
             
             assetFolderProvider['getMergedOptions']=()=>({});

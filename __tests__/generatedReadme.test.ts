@@ -1,5 +1,9 @@
 import { GeneratedReadme } from '../src/GeneratedReadme'
 describe('GeneratedReadme result from toString', () => {
+  beforeEach(()=>{
+    jest.clearAllMocks();
+  });
+
   it('should come from the newlineSpacer', () => {
     const newlineSpacer = jest.fn().mockReturnValue('spaced');
     const generatedReadme = new GeneratedReadme(jest.fn(),jest.fn(),newlineSpacer);
@@ -56,26 +60,47 @@ describe('GeneratedReadme result from toString', () => {
           expect(componentReadmeParts[2]).toBe('markdown code');
           expect(markdownCodeCreator).toHaveBeenCalledWith('some code','some language');
         })
+      });
+      
+      [0,1,2].forEach(definedArgument => {
+        it(`should just have single entry - Argument ${definedArgument}`, () => {
+          const newlineSpacer = jest.fn().mockReturnValue('spaced');
+          const markdownImageCreator = jest.fn().mockReturnValue('markdown image');
+          const markdownCodeCreator = jest.fn().mockReturnValue('markdown code');
+          
+          
+          const generatedReadme = new GeneratedReadme(markdownCodeCreator,markdownImageCreator,newlineSpacer);
+          generatedReadme.addComponentGeneration(
+            definedArgument===0?{code:'code',language:'language'}:undefined,
+            definedArgument===1?'component readme':undefined,
+            definedArgument===2?{altText:'alt text',componentImagePath:'image path'}:undefined
+          );
+          
+          generatedReadme.toString();
+
+          const componentsReadmeParts = newlineSpacer.mock.calls[0][1];
+          expect(componentsReadmeParts[0].length).toBe(1);
+          const entry = componentsReadmeParts[0][0];
+          
+          switch(definedArgument){
+            case 0:
+              expect(entry).toBe('markdown code');
+              expect(markdownCodeCreator).toHaveBeenCalledWith('code','language');
+              break;
+            case 1:
+              expect(entry).toBe('component readme')
+              break;
+            case 2:
+              expect(entry).toBe('markdown image');
+              expect(markdownImageCreator).toHaveBeenCalledWith('image path','alt text')
+              break;
+          }
+          
+        })
+        
       })
-      it('should just have result fom markdownImageCreator if no component readme and no code', () => {
-        const newlineSpacer = jest.fn().mockReturnValue('spaced');
-        const markdownImageCreator = jest.fn().mockReturnValue('markdown image');
-        
-        jest.clearAllMocks();
-        const generatedReadme = new GeneratedReadme(jest.fn(),markdownImageCreator,newlineSpacer);
-        generatedReadme.addComponentGeneration(
-          {code:'',language:''},
-          '',
-          {altText:'alt text',componentImagePath:'image path'}
-        );
-        
-        generatedReadme.toString();
-        const componentsReadmeParts = newlineSpacer.mock.calls[0][1];
-        expect(componentsReadmeParts[0].length).toBe(1);
-        expect(componentsReadmeParts[0][0]).toBe('markdown image');
       })
       
-    })
 
     it('should have surrounded entries from surround with', () => {
       const newlineSpacer = jest.fn().mockReturnValue('spaced');
@@ -98,9 +123,6 @@ describe('GeneratedReadme result from toString', () => {
       expect(componentsReadmeParts[2][0]).toBe('post');
     })
 
-    it('should have last entry as surround with post', () => {
-
-    })
 
   })
 })

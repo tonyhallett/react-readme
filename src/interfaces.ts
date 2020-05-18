@@ -11,7 +11,7 @@ export interface ImageDetails{
   altText:string
 }
 export interface IGeneratedReadme{
-  addComponentGeneration(codeDetails: CodeDetails, readme: string, imageDetails:ImageDetails):void
+  addComponentGeneration(codeDetails: CodeDetails|undefined, readme: string|undefined, imageDetails:ImageDetails|undefined):void
   surroundWith(pre:string|undefined,post:string|undefined):void
   toString():string
 }
@@ -35,10 +35,10 @@ export type ReadmeImageType = Exclude<ScreenshotType,'pdf'>
 export type ComponentInfoScreenshotOptions = ComponentScreenshotOptions&{type?:'jpeg'|'png'}& {Component:React.ComponentType}
 
 export interface ComponentInfo {
-  codeDetails:CodeDetails
-  readme:string,
+  codeDetails:CodeDetails|undefined
+  readme:string|undefined,
   name:string,
-  componentScreenshot:ComponentInfoScreenshotOptions
+  componentScreenshot?:ComponentInfoScreenshotOptions
 }
 
 export interface IAssetManager{

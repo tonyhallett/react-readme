@@ -3,7 +3,7 @@ import React from 'react';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
-describe('puppeteer generator', () => {
+describe.skip('puppeteer generator', () => {
 
   it('should not throw with multiple', async () => {
     const Component: React.FC = () =>{

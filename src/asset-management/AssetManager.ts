@@ -15,6 +15,7 @@ export type CodeInReadme = 'None'|'Js'
 export interface ComponentOptionsCommon{
   codeReplacer?:CodeReplacer,
   codeInReadme?:CodeInReadme,
+  propsCodeInReadme?:CodeInReadme,
   screenshotOptions?:ReadmeComponentScreenshotOptions
 }
 export type ComponentOptionsNoId = Omit<ComponentOptionsCommon,'id'>;
@@ -32,9 +33,21 @@ export interface IAssetFolderProvider{
 
 }
 
-
-
-export type ComponentOptions = ComponentOptionsCommon&{componentPath?:string,component?:React.ComponentType, componentKey?:string}
+export interface PropsOptions{
+  readme?:string,
+  readmeFileName?:string,
+  screenshotOptions?:ReadmeComponentScreenshotOptions
+}
+type Props = Record<string,any>
+type PropsWithOptions = [Props,PropsOptions]
+export type ComponentOptionsProps = Array<Props|PropsWithOptions>
+export type ComponentOptions = ComponentOptionsCommon & 
+  {
+    componentPath?:string,
+    component?:React.ComponentType,
+    componentKey?:string,
+    props?:ComponentOptionsProps
+  }
 export interface ComponentInfoProvider<T={}>{
   getComponentInfos(readmeAssetsFolderPath:string,globalOptions:T&GlobalComponentOptions):Promise<ComponentInfo[]>
 }

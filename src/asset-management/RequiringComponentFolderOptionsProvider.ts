@@ -18,6 +18,10 @@ export class RequiringComponentFolderOptionsProvider implements IComponentFolder
     private readonly languageReader:ILanguageReader,
     private readonly optionsParser:IOptionsParser
     ){}
+  getPropsCode(componentAssetFolderPath: string, isJs: boolean): Promise<CodeDetails> {
+    //will want to do the same as below.
+    throw new Error("Method not implemented.");
+  }
   async getComponentCode(componentAssetFolderPath: string,isJs:boolean): Promise<CodeDetails> {
     const path = this.readmeRequirer.getReactReadmeInFolder(componentAssetFolderPath);
     const result = await this.languageReader.read(path,isJs);
