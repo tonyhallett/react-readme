@@ -38,9 +38,10 @@ export interface PropsOptions{
   readmeFileName?:string,
   screenshotOptions?:ReadmeComponentScreenshotOptions
 }
-type Props = Record<string,any>
-type PropsWithOptions = [Props,PropsOptions]
-export type ComponentOptionsProps = Array<Props|PropsWithOptions>
+export type Props = Record<string,any>
+export type PropsWithOptions = [Props,PropsOptions]
+export type PropsOrPropsWithOptions = Props|PropsWithOptions
+export type ComponentOptionsProps = Array<PropsOrPropsWithOptions>
 export type ComponentOptions = ComponentOptionsCommon & 
   {
     componentPath?:string,

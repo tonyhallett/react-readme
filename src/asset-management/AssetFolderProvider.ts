@@ -1,5 +1,5 @@
 import { CodeDetails, ComponentInfo, ISystem , IRequirer} from '../interfaces';
-import { IAssetFolderProvider, ComponentOptions, GlobalComponentOptions, CodeReplacer, CodeInReadme, ComponentOptionsCommon, ComponentOptionsProps, PropsOptions } from './AssetManager';
+import { IAssetFolderProvider, ComponentOptions, GlobalComponentOptions, CodeReplacer, CodeInReadme, ComponentOptionsCommon, ComponentOptionsProps, PropsOptions, PropsOrPropsWithOptions } from './AssetManager';
 import { ILanguageReader } from './LanguageReader';
 export interface IAssetFolderComponentInfoProvider<T=any>{
   getComponentInfos(componentAssetsFolder: string, globalOptions: T&GlobalComponentOptions): Promise<ComponentInfo[]>
@@ -35,26 +35,41 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     
   }
   
-  private async generateComponentInfosForProps(componentOptions:ComponentOptions&{props:ComponentOptionsProps},mergedOptions: ComponentOptionsCommon,componentAssetFolder: string,componentAssetFolderName:string): Promise<ComponentInfo[]> {
+  private getPropsAndOptions(propsOrPropsWithOptions:PropsOrPropsWithOptions){
+    let props = propsOrPropsWithOptions;
+    let propsOptions:PropsOptions = {};
+    if(Array.isArray(propsOrPropsWithOptions)){
+      props = propsOrPropsWithOptions[0];
+      propsOptions = propsOrPropsWithOptions[1];
+    }
+    return {props,propsOptions};
+  }
+  private async getPropsCodeDetails(mergedOptions:ComponentOptionsCommon,componentAssetFolder:string){
+    let propsCodeDetails:CodeDetails|undefined;
+    if(mergedOptions.propsCodeInReadme!=='None'){
+      propsCodeDetails = await this.componentFolderOptionsProvider.getPropsCode(componentAssetFolder,mergedOptions.propsCodeInReadme==='Js');
+      if(propsCodeDetails===undefined){
+        throw new Error('Unable to parse props for readme code');
+      }
+    }
+    return propsCodeDetails;
+  }
+  private async getPropsReadme(propsOptions:PropsOptions,componentAssetFolder:string){
+    let propsReadme = propsOptions.readme;
+    if(propsOptions.readmeFileName){
+      propsReadme = await this.readComponentReadMe(componentAssetFolder,propsOptions.readmeFileName,true);
+    }
+    return propsReadme;
+  }
+  private async generateComponentInfosForAllProps(componentOptions:ComponentOptions&{props:ComponentOptionsProps},mergedOptions: ComponentOptionsCommon,componentAssetFolder: string,componentAssetFolderName:string): Promise<ComponentInfo[]> {
     const {Component,codeDetails, readme} = await this.getComponentComponentInfo(componentOptions,mergedOptions,componentAssetFolder);
     const componentComponentInfo:ComponentInfo = {
       readme,codeDetails,name:''
     }
-    const componentInfos =  await Promise.all(componentOptions.props.map(async (propsOrPropsAndOptions,i) => {
-      let props = propsOrPropsAndOptions;
-      let propsOptions:PropsOptions = {};
-      if(Array.isArray(propsOrPropsAndOptions)){
-        props = propsOrPropsAndOptions[0];
-        propsOptions = propsOrPropsAndOptions[1];
-      }
-      let propsCodeDetails:CodeDetails|undefined;
-      if(mergedOptions.propsCodeInReadme!=='None'){
-        propsCodeDetails = await this.componentFolderOptionsProvider.getPropsCode(componentAssetFolder,mergedOptions.propsCodeInReadme==='Js')
-      }
-      let propsReadme = propsOptions.readme;
-      if(propsOptions.readmeFileName){
-        propsReadme = await this.readComponentReadMe(propsOptions.readmeFileName);
-      }
+    const componentInfos =  await Promise.all(componentOptions.props.map(async (propsOrPropsWithOptions,i) => {
+      const {props,propsOptions} = this.getPropsAndOptions(propsOrPropsWithOptions);
+      let propsCodeDetails = await this.getPropsCodeDetails(mergedOptions,componentAssetFolder);
+      let propsReadme = await this.getPropsReadme(propsOptions,componentAssetFolder);
       const screenshotOptions = propsOptions.screenshotOptions||mergedOptions.screenshotOptions;
       const propsComponentInfo:ComponentInfo = {
         codeDetails:propsCodeDetails,
@@ -112,7 +127,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     const mergedOptions = this.getMergedOptions(componentOptions);
 
     if (componentOptions && componentOptions.props && componentOptions.props.length>0) {
-      return this.generateComponentInfosForProps(componentOptions as any,mergedOptions,componentAssetFolderPath,componentAssetFolderName);
+      return this.generateComponentInfosForAllProps(componentOptions as any,mergedOptions,componentAssetFolderPath,componentAssetFolderName);
     }
     
     const {Component,...others} = await this.getComponentComponentInfo(componentOptions,mergedOptions,componentAssetFolderPath);
@@ -214,9 +229,12 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     }
     return Component;
   }
-  async readComponentReadMe(componentAssetFolder: string,readmeName='README.md'): Promise<string> {
+  async readComponentReadMe(componentAssetFolder: string,readmeName='README.md',throwIfDoesNotExist=false): Promise<string> {
     const readmePath = this.system.path.join(componentAssetFolder, 'README.md');
     const exists = await this.system.path.exists(readmePath);
+    if(exists && throwIfDoesNotExist){
+      throw new Error(`Unable to find ${readmeName} in ${this.componentAssetsFolder}`)
+    }
     let componentReadMe = '';
     if (exists) {
       componentReadMe = await this.system.fs.readFileString(readmePath);

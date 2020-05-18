@@ -11,6 +11,7 @@ const noopSorter:IComponentSorter = {
     }))
   }
 }
+
 describe('AssetFolderProvider', () => {
   describe('getComponentInfos', () => {
     it('should contain all registered and own', async () => {
@@ -89,6 +90,65 @@ describe('AssetFolderProvider', () => {
     })
     describe('getComponentInfosForFolder', () => {
       describe('has props', () => {
+        //merged options
+        it('should call generateComponentInfosForProps when component options has props with length > 0', async () => {
+
+        })
+        describe('generateComponentInfosForAllProps', () => {
+          // will need to expect arguments for all
+          it('should have ComponentInfo for component with readme and codeDetails only', async () => {
+
+          })
+          describe('ComponentInfo for each props entry', () => {
+            it('should get props and options, props for the screenshot', () => {
+
+            })
+            describe('getPropsAndOptions', () => {
+              interface PropsAndOptionsTest{
+
+              }
+            })
+            it('should get code details for the ComponentInfo', () => {
+
+            })
+            describe('getPropsCodeDetails', () => {
+              it('should be undefined if mergedOptions.propsCodeInReadme is None', () => {
+
+              })
+              //foreach
+              it('should get props code from the componentFolderOptionsProvider if mergedOptions.propsCodeInReadme is not None', () => {
+                
+              })
+              it('should throw error if cannot find the props code', () => {
+
+              })
+            })
+
+            it('should get the read me and for the ComponentInfo', () => {
+
+            })
+            describe('getPropsReadme', () => {
+              it('should come from the options.readme if present', () => {
+
+              })
+              it('should be read from options.readmeFileName if present', () => {
+                
+              })
+            })
+            it('should have the Component for the screenshot', () => {
+
+            })
+            it('should have remaining screenshot options from propsOptions', () => {
+
+            })
+            it('should fallback to merged options for remaining screenshot options', () => {
+
+            })
+            
+            
+          })
+          
+        })
         
 
 
