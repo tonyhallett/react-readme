@@ -1,6 +1,6 @@
-import { CodeReplacer, ComponentOptions, CodeInReadme, ComponentOptionsCommon, } from "../src/asset-management/AssetManager"
-import { AssetFolderProvider, IComponentSorter, SortedComponentFolder, IComponentFolderOptionsProvider} from "../src/asset-management/AssetFolderProvider"
-import { CodeDetails } from "../src/interfaces";
+import { CodeReplacer, ComponentOptions, CodeInReadme, ComponentOptionsCommon, ComponentOptionsProps, PropsOrPropsWithOptions, Props, PropsOptions, } from "../src/asset-management/AssetManager"
+import { AssetFolderProvider, IComponentSorter, SortedComponentFolder, IComponentFolderOptionsProvider, ComponentOptionsWithProps, PropsAndOptions, ComponentComponentInfo} from "../src/asset-management/AssetFolderProvider"
+import { CodeDetails, ComponentInfo } from "../src/interfaces";
 import { LanguageReaderResult } from "../src/asset-management/LanguageReader";
 
 const noopSorter:IComponentSorter = {
@@ -90,68 +90,295 @@ describe('AssetFolderProvider', () => {
     })
     describe('getComponentInfosForFolder', () => {
       describe('has props', () => {
-        //merged options
-        it('should call generateComponentInfosForProps when component options has props with length > 0', async () => {
+        it('should call generateComponentInfosForAllProps when component options has props with length > 0', async () => {
+          const componentOptions:ComponentOptions = {
+            props:[{}]
+          }
+          const assetFolderProvider = new AssetFolderProvider({
 
+          } as any,
+          null as any,
+          {
+            getOptions(){
+              return Promise.resolve(componentOptions)
+            }
+          } as any, 
+          null as any, 
+          null as any);
+
+          const mockComponentInfos = [{mock:'componentInfo'}];
+          const generateComponentInfosForAllProps = jest.fn().mockResolvedValue(mockComponentInfos)
+          assetFolderProvider['generateComponentInfosForAllProps'] = generateComponentInfosForAllProps
+
+          const mergedOptions = {merged:'option'} as any;
+          assetFolderProvider['getMergedOptions'] = () => mergedOptions;
+
+          const componentInfosForFolder = await assetFolderProvider['getComponentInfosForFolder']('path','name');
+          expect(componentInfosForFolder).toBe(mockComponentInfos);
+          expect(generateComponentInfosForAllProps).toHaveBeenCalledWith(componentOptions,mergedOptions,'path','name');
         })
         describe('generateComponentInfosForAllProps', () => {
-          // will need to expect arguments for all
-          it('should have ComponentInfo for component with readme and codeDetails only', async () => {
-
+          beforeEach(()=>{
+            jest.clearAllMocks();
           })
-          describe('ComponentInfo for each props entry', () => {
-            it('should get props and options, props for the screenshot', () => {
+          const componentAssetFolder='path';
+          const componentAssetFolderName = 'name';
 
+          const mockComponentComponentInfo:ComponentComponentInfo = {
+            readme:'Component readme',
+            codeDetails:{
+              code:'Component code',
+              language:'Component language'
+            },
+            Component:function(){} as any
+          };
+          const getComponentComponentInfo = jest.fn().mockResolvedValue(mockComponentComponentInfo);
+          
+          const propsCodeDetailsFirst:CodeDetails = {
+            code:'props 1 code',
+            language:'javascript'
+          }
+          const propsCodeDetailsSecond:CodeDetails = {
+            code:'props 2 code',
+            language:'javascript'
+          }
+          let getPropsCodeDetails:jest.Mock 
+
+          
+          let propsAndOptionsFirst:ReturnType<AssetFolderProvider['getPropsAndOptions']> = {props:{prop1:1},propsOptions:{screenshotOptions:{
+            css:'From props options'
+          }}};
+          let propsAndOptionsSecond:ReturnType<AssetFolderProvider['getPropsAndOptions']> = {props:{prop1:2},propsOptions:{}};
+          let getPropsAndOptions:jest.Mock
+          
+          const propsReadmeFirst = 'props 1 readme';
+          const propsReadmeSecond = 'props 2 readme';
+          let getPropsReadme:jest.Mock
+          function generateComponentInfosForAllPropsTest(componentOptions:ComponentOptionsWithProps,mergedOptions:ComponentOptionsCommon){
+            getPropsAndOptions = jest.fn().mockReturnValueOnce(propsAndOptionsFirst).mockReturnValueOnce(propsAndOptionsSecond);
+            getPropsCodeDetails = jest.fn().mockResolvedValueOnce(propsCodeDetailsFirst).mockResolvedValueOnce(propsCodeDetailsSecond);
+            getPropsReadme = jest.fn().mockResolvedValueOnce(propsReadmeFirst).mockResolvedValueOnce(propsReadmeSecond);
+            const assetFolderProvider = new AssetFolderProvider(null as any,null as any, null as any, null as any, null as any);
+            assetFolderProvider['getComponentComponentInfo'] = getComponentComponentInfo;
+            assetFolderProvider['getPropsAndOptions'] = getPropsAndOptions;
+            assetFolderProvider['getPropsCodeDetails'] = getPropsCodeDetails;
+            assetFolderProvider['getPropsReadme'] = getPropsReadme;
+            return assetFolderProvider['generateComponentInfosForAllProps'](componentOptions
+            ,mergedOptions,componentAssetFolder,componentAssetFolderName)
+          }
+          
+          it('should have ComponentInfo for component with readme and codeDetails only', async () => {
+            const componentOptions = {props:[]}
+            const mergedOptions = {some:'merged option'};
+            const result = await generateComponentInfosForAllPropsTest(componentOptions as any,mergedOptions as any);
+            expect(result.length).toBe(1);
+            expect(result[0]).toEqual<ComponentInfo>({name:'',readme:mockComponentComponentInfo.readme,codeDetails:mockComponentComponentInfo.codeDetails});
+            expect(getComponentComponentInfo).toHaveBeenCalledWith(componentOptions,mergedOptions,'path');
+          })
+          
+          describe('ComponentInfo for each props entry', () => {
+            it('should get props and options, props for the screenshot', async () => {
+              const componentOptions:ComponentOptionsWithProps = {
+                props:[{prop1:1},{prop1:2}]
+              }
+              const result = await generateComponentInfosForAllPropsTest(componentOptions,{});
+              expect(result.length).toBe(3);
+              expect(result[1].componentScreenshot!.props).toBe(propsAndOptionsFirst.props);
+              expect(result[2].componentScreenshot!.props).toBe(propsAndOptionsSecond.props);
+              expect(getPropsAndOptions).toHaveBeenNthCalledWith(1,componentOptions.props[0]);
+              expect(getPropsAndOptions).toHaveBeenNthCalledWith(2,componentOptions.props[1]);
             })
             describe('getPropsAndOptions', () => {
               interface PropsAndOptionsTest{
-
+                description:string
+                propsOrPropsWithOptions:PropsOrPropsWithOptions,
+                expected:PropsAndOptions
               }
+              const props:Props = {prop1:1};
+              const propsOptions:PropsOptions = {readme:'props readme'};
+              const tests:PropsAndOptionsTest[] = [
+                {
+                  description:'props and options',
+                  propsOrPropsWithOptions:[props,propsOptions],
+                  expected:{
+                    props,
+                    propsOptions
+                  }
+                },
+                {
+                  description:'just props',
+                  propsOrPropsWithOptions:props,
+                  expected:{
+                    props,
+                    propsOptions:{}
+                  }
+                }
+              ]
+              tests.forEach(test => {
+                it(test.description, () => {
+                  const assetFolderProvider = new AssetFolderProvider(null as any,null as any, null as any, null as any, null as any);
+                  expect(assetFolderProvider['getPropsAndOptions'](test.propsOrPropsWithOptions)).toEqual(test.expected);
+                })
+              })
             })
-            it('should get code details for the ComponentInfo', () => {
-
+            it('should get code details for the ComponentInfo', async() => {
+              const componentOptions:ComponentOptionsWithProps = {
+                props:[{prop1:1},{prop1:2}]
+              }
+              const mergedOptions = {merged:'option'} as any;
+              const result = await generateComponentInfosForAllPropsTest(componentOptions,mergedOptions);
+              expect(result[1].codeDetails).toBe(propsCodeDetailsFirst);
+              expect(result[2].codeDetails).toBe(propsCodeDetailsSecond);
+              [1,2].forEach(nthCall => {
+                expect(getPropsCodeDetails).toHaveBeenNthCalledWith(nthCall,mergedOptions,'path');
+              })
             })
             describe('getPropsCodeDetails', () => {
-              it('should be undefined if mergedOptions.propsCodeInReadme is None', () => {
-
+              it('should be undefined if mergedOptions.propsCodeInReadme is None',async () => {
+                const assetFolderProvider = new AssetFolderProvider(null as any,null as any, null as any, null as any, null as any);
+                const result = await assetFolderProvider['getPropsCodeDetails']({propsCodeInReadme:'None'},'');
+                expect(result).toBeUndefined();
               })
-              //foreach
-              it('should get props code from the componentFolderOptionsProvider if mergedOptions.propsCodeInReadme is not None', () => {
-                
+              const propsCodeInReadmeTests:Array<CodeInReadme|undefined> = ['Js',undefined];
+              propsCodeInReadmeTests.forEach(propsCodeInReadme => {
+                it('should get props code from the componentFolderOptionsProvider if mergedOptions.propsCodeInReadme is not None', async () => {
+                  const propsCode = {code:'props code',language:'language'};
+                  const getPropsCode = jest.fn().mockResolvedValue(propsCode);
+                  const assetFolderProvider = new AssetFolderProvider(null as any,null as any, {
+                    getPropsCode
+                  } as any, null as any, null as any);
+                  const componentAssetFolder = 'path';
+                  const result = await assetFolderProvider['getPropsCodeDetails']({propsCodeInReadme},componentAssetFolder);
+                  expect(result).toBe(propsCode);
+                  expect(getPropsCode).toHaveBeenCalledWith(componentAssetFolder,propsCodeInReadme==='Js');
+                })
               })
+              
               it('should throw error if cannot find the props code', () => {
-
+                const assetFolderProvider = new AssetFolderProvider(null as any,null as any, {
+                  getPropsCode(){
+                    return undefined;
+                  }
+                } as any, null as any, null as any);
+                
+                return expect(()=>assetFolderProvider['getPropsCodeDetails']({},componentAssetFolder)).rejects.toThrowError('Unable to parse props for readme code');
               })
             })
 
-            it('should get the read me and for the ComponentInfo', () => {
+            it('should get the read me and for the ComponentInfo', async () => {
+              const componentOptions:ComponentOptionsWithProps = {
+                props:[{prop1:1},{prop1:2}]
+              }
+              const result = await generateComponentInfosForAllPropsTest(componentOptions,{});
+              
+              expect(result[1].readme).toBe(propsReadmeFirst);
+              expect(result[2].readme).toBe(propsReadmeSecond);
 
+              expect(getPropsReadme).toHaveBeenNthCalledWith(1,propsAndOptionsFirst.propsOptions,'path');
+              expect(getPropsReadme).toHaveBeenNthCalledWith(2,propsAndOptionsSecond.propsOptions,'path');
             })
             describe('getPropsReadme', () => {
-              it('should come from the options.readme if present', () => {
-
+              it('should come from the options.readme if present', async () => {
+                const assetFolderProvider = new AssetFolderProvider(null as any,null as any, null as any, null as any, null as any);
+                const propsReadme = await assetFolderProvider['getPropsReadme']({readme:'props readme'},'');
+                expect(propsReadme).toBe('props readme');
               })
-              it('should be read from options.readmeFileName if present', () => {
-                
+              it('should be read from options.readmeFileName if present', async () => {
+                const assetFolderProvider = new AssetFolderProvider(null as any,null as any, null as any, null as any, null as any);
+                const readComponentReadMe = jest.fn().mockResolvedValue('props readme from file');
+                assetFolderProvider['readComponentReadMe']=readComponentReadMe;
+                const propsReadme = await assetFolderProvider['getPropsReadme']({readmeFileName:'props.readme'},'path');
+                expect(propsReadme).toBe('props readme from file');
+                expect(readComponentReadMe).toHaveBeenCalledWith('path','props.readme',true);
+              })
+              describe('readComponentReadMe', () => {
+                const componentAssetFolder = 'components/component1';
+                const readReadme = 'a readme';
+                let pathExists:jest.Mock;
+                let readFileString:jest.Mock;
+                function readComponentReadmeTest(exists:boolean,readmeName:string|undefined,throwIfDoesNotExist:boolean){
+                  pathExists = jest.fn().mockReturnValue(exists);
+                  readFileString = jest.fn().mockReturnValue(readReadme);
+                  const assetFolderProvider = new AssetFolderProvider({
+                    path:{
+                      join(...paths:string[]){
+                        return paths.join('/');
+                      },
+                      exists:pathExists
+
+                    },
+                    fs:{
+                      readFileString
+                    }
+                  } as any,null as any, null as any, null as any, null as any);
+
+                  return assetFolderProvider['readComponentReadMe'](componentAssetFolder,readmeName,throwIfDoesNotExist);
+                }
+                it('should check exists in componentAssetFolder', async () => {
+                  await readComponentReadmeTest(false,'areadme.md',false);
+                  expect(pathExists).toHaveBeenCalledWith(`${componentAssetFolder}/areadme.md`);
+                })
+                it('should default file name to README.md', async () => {
+                  await readComponentReadmeTest(false,undefined,false);
+                  expect(pathExists).toHaveBeenCalledWith(`${componentAssetFolder}/README.md`);
+                })
+                describe('does not exist in the component asset folder', () => {
+                  
+                  it('should throw if throwIfDoesNotExist', () => {
+                    return expect(()=>readComponentReadmeTest(false,undefined,true)).rejects.toThrowError(`Unable to find README.md in ${componentAssetFolder}`);
+                  })
+                  it('should return undefined if not throwIfDoesNotExist', async () => {
+                    expect(await readComponentReadmeTest(false,undefined,false)).toBeUndefined();
+                  })
+                })
+                it('should return the read file if does exist', async () => {
+                  expect(await readComponentReadmeTest(true,undefined,false)).toBe(readReadme);
+                  expect(readFileString).toHaveBeenCalledWith(`${componentAssetFolder}/README.md`);
+                })
               })
             })
-            it('should have the Component for the screenshot', () => {
+            describe('screenshot options', () => {
+              it('should have the Component for the screenshot', async () => {
+                const componentOptions:ComponentOptionsWithProps = {
+                  props:[{prop1:1},{prop1:2}]
+                }
+                const result = await generateComponentInfosForAllPropsTest(componentOptions,{});
+                expect(result[1].componentScreenshot!.Component).toBe(mockComponentComponentInfo.Component);
+                expect(result[2].componentScreenshot!.Component).toBe(mockComponentComponentInfo.Component);
+              })
+              
+              it('should have remaining screenshot options from propsOptions', async () => {
+                const componentOptions:ComponentOptionsWithProps = {
+                  props:[{prop1:1},{prop1:2}]
+                }
+                const result = await generateComponentInfosForAllPropsTest(componentOptions,{});
+                expect(result[1].componentScreenshot!.css).toBe('From props options')
+              })
+              it('should fallback to merged options for remaining screenshot options', async () => {
+                const componentOptions:ComponentOptionsWithProps = {
+                  props:[{prop1:1},{prop1:2}]
+                }
+                const result = await generateComponentInfosForAllPropsTest(componentOptions,{screenshotOptions:{css:'From merged options'}});
+                expect(result[2].componentScreenshot!.css).toBe('From merged options')
+              })
 
             })
-            it('should have remaining screenshot options from propsOptions', () => {
+            it('should have name from component folder name - props - and index', async () => {
+              const componentOptions:ComponentOptionsWithProps = {
+                props:[{prop1:1},{prop1:2}]
+              }
+              const result = await generateComponentInfosForAllPropsTest(componentOptions,{});
+              
+              expect(result[1].name).toBe(`${componentAssetFolderName}props0`);
+              expect(result[2].name).toBe(`${componentAssetFolderName}props1`);
 
+              expect(getPropsReadme).toHaveBeenNthCalledWith(1,propsAndOptionsFirst.propsOptions,'path');
+              expect(getPropsReadme).toHaveBeenNthCalledWith(2,propsAndOptionsSecond.propsOptions,'path');
             })
-            it('should fallback to merged options for remaining screenshot options', () => {
-
-            })
-            
-            
           })
-          
+
         })
         
-
-
       })
       describe('does not have props -  [ComponentInfo]', () => {
         describe('component readme', () => {
@@ -207,7 +434,7 @@ describe('AssetFolderProvider', () => {
                 expect(mock).toHaveBeenCalledWith('readme-assets/components/Component/README.md');
               })
             })
-            it('should return empty string if README.md does not exist',async () => {
+            it('should return undefined if README.md does not exist',async () => {
               const exists=jest.fn().mockResolvedValue(false);
               const assetFolderProvider:AssetFolderProvider = new AssetFolderProvider({
                   path:{
@@ -220,7 +447,7 @@ describe('AssetFolderProvider', () => {
                   require
                 },{} as any,noopSorter,{} as any);
                 const componentReadme = await assetFolderProvider.readComponentReadMe('readme-assets/components/Component');
-                expect(componentReadme).toEqual('');
+                expect(componentReadme).toBeUndefined();
             })
           })
         })

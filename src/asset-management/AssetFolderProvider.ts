@@ -1,5 +1,5 @@
 import { CodeDetails, ComponentInfo, ISystem , IRequirer} from '../interfaces';
-import { IAssetFolderProvider, ComponentOptions, GlobalComponentOptions, CodeReplacer, CodeInReadme, ComponentOptionsCommon, ComponentOptionsProps, PropsOptions, PropsOrPropsWithOptions } from './AssetManager';
+import { IAssetFolderProvider, ComponentOptions, GlobalComponentOptions, CodeReplacer, CodeInReadme, ComponentOptionsCommon, ComponentOptionsProps, PropsOptions, PropsOrPropsWithOptions, Props } from './AssetManager';
 import { ILanguageReader } from './LanguageReader';
 export interface IAssetFolderComponentInfoProvider<T=any>{
   getComponentInfos(componentAssetsFolder: string, globalOptions: T&GlobalComponentOptions): Promise<ComponentInfo[]>
@@ -18,8 +18,12 @@ export interface IComponentFolderOptionsProvider{
 
 type CodeProvider = (isJs:boolean)=>Promise<CodeDetails>
 
-type ComponentComponentInfo = Pick<ComponentInfo,'readme'|'codeDetails'>&{Component:React.ComponentType};
-
+export type ComponentComponentInfo = Pick<ComponentInfo,'readme'|'codeDetails'>&{Component:React.ComponentType};
+export type PropsAndOptions = {
+  props:Props,
+  propsOptions:PropsOptions
+}
+export type ComponentOptionsWithProps = ComponentOptions&{props:ComponentOptionsProps};
 export class AssetFolderProvider implements IAssetFolderProvider {
   private providers: IAssetFolderComponentInfoProvider[] = [];
   private globalOptions!: GlobalComponentOptions;
@@ -35,7 +39,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     
   }
   
-  private getPropsAndOptions(propsOrPropsWithOptions:PropsOrPropsWithOptions){
+  private getPropsAndOptions(propsOrPropsWithOptions:PropsOrPropsWithOptions):PropsAndOptions{
     let props = propsOrPropsWithOptions;
     let propsOptions:PropsOptions = {};
     if(Array.isArray(propsOrPropsWithOptions)){
@@ -61,7 +65,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     }
     return propsReadme;
   }
-  private async generateComponentInfosForAllProps(componentOptions:ComponentOptions&{props:ComponentOptionsProps},mergedOptions: ComponentOptionsCommon,componentAssetFolder: string,componentAssetFolderName:string): Promise<ComponentInfo[]> {
+  private async generateComponentInfosForAllProps(componentOptions:ComponentOptionsWithProps,mergedOptions: ComponentOptionsCommon,componentAssetFolder: string,componentAssetFolderName:string): Promise<ComponentInfo[]> {
     const {Component,codeDetails, readme} = await this.getComponentComponentInfo(componentOptions,mergedOptions,componentAssetFolder);
     const componentComponentInfo:ComponentInfo = {
       readme,codeDetails,name:''
@@ -74,7 +78,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
       const propsComponentInfo:ComponentInfo = {
         codeDetails:propsCodeDetails,
         readme:propsReadme,
-        name:`${componentAssetFolderName}props{i}`,
+        name:`${componentAssetFolderName}props${i}`,
         componentScreenshot:{
           Component,
           props,
@@ -229,16 +233,16 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     }
     return Component;
   }
-  async readComponentReadMe(componentAssetFolder: string,readmeName='README.md',throwIfDoesNotExist=false): Promise<string> {
-    const readmePath = this.system.path.join(componentAssetFolder, 'README.md');
+  async readComponentReadMe(componentAssetFolder: string,readmeName='README.md',throwIfDoesNotExist=false): Promise<string|undefined> {
+    const readmePath = this.system.path.join(componentAssetFolder, readmeName);
     const exists = await this.system.path.exists(readmePath);
-    if(exists && throwIfDoesNotExist){
-      throw new Error(`Unable to find ${readmeName} in ${this.componentAssetsFolder}`)
+    if(!exists){
+      if(throwIfDoesNotExist){
+        throw new Error(`Unable to find ${readmeName} in ${componentAssetFolder}`)
+      }
+      return undefined;
     }
-    let componentReadMe = '';
-    if (exists) {
-      componentReadMe = await this.system.fs.readFileString(readmePath);
-    }
-    return componentReadMe;
+    
+    return this.system.fs.readFileString(readmePath);
   }
 }
