@@ -55,122 +55,167 @@ describe('RequiringComponentFolderOptionsProvider', () => {
     })
   })
   
-  describe('getComponentCode', () => {
-    it('should return the language found by the language reader for the react-readme', async () => {
-      const reactReadmepath='react-readme.js';
-      const getReactReadmeInFolder = jest.fn().mockReturnValue(reactReadmepath);
+  describe('parsing', () => {
+    describe('getPropsCode', () => {
+      it('should use common - parsing with the optionsParser.getPropsCode', async () => {
+        const propsCode:{code:string[],language:string} = {code:['{props1:1}','{props2:2}'],language:'language'}
+        const getPropsCode = jest.fn();
+        const requiringComponentFolderOptionsProvider = new RequiringComponentFolderOptionsProvider(
+          null as any, 
+          null as any, 
+          null as any, 
+          {getPropsCode} as any
+        );
+        const common = jest.fn().mockResolvedValue(propsCode);
+        requiringComponentFolderOptionsProvider['common'] = common;
 
-      const languageReaderResult:LanguageReaderResult = {
-        code:'code',
-        language:'javascript',
-        readPath:'readpath'
-      }
-      const languageReaderRead = jest.fn().mockResolvedValue(languageReaderResult);
-      const getComponentCode = jest.fn().mockReturnValue('parsed code');
+        const mockIsJs = {isJs:true} as any;
+        const result = await requiringComponentFolderOptionsProvider.getPropsCode('path',mockIsJs);
 
-      const requiringComponentFolderOptionsProvider = new RequiringComponentFolderOptionsProvider({
-        getReactReadmeInFolder
-      } as any, 
-      null as any, 
-      {read:languageReaderRead} as any, 
-      {getComponentCode}
-      );
-      const componentAssetFolderPath = 'component1';
-      const mockIsJs = {pass:'through'} as any;
-      const componentCode = await requiringComponentFolderOptionsProvider.getComponentCode(componentAssetFolderPath,mockIsJs);
+        expect(result).toBe(propsCode);
+        expect(common).toHaveBeenCalledWith('path',mockIsJs,expect.any(Function),'props');
+        
+        common.mock.calls[0][2]('readpath','code');
+        expect(getPropsCode).toHaveBeenCalledWith('readpath','code');
 
-      expect(componentCode.language).toBe(languageReaderResult.language);
-      expect(getReactReadmeInFolder).toHaveBeenCalledWith(componentAssetFolderPath);
-      expect(languageReaderRead).toHaveBeenCalledWith(reactReadmepath,mockIsJs);
-      
-    })
-    it('should return parsed code of the react-readme found by the language reader', async () => {
-      const getReactReadmeInFolder = jest.fn();
-
-      const languageReaderResult:LanguageReaderResult = {
-        code:'code',
-        language:'javascript',
-        readPath:'readpath'
-      }
-      const languageReaderRead = jest.fn().mockResolvedValue(languageReaderResult);
-      const parsedCode = 'parsed code';
-      const getComponentCode = jest.fn().mockReturnValue(parsedCode);
-
-      const requiringComponentFolderOptionsProvider = new RequiringComponentFolderOptionsProvider({
-        getReactReadmeInFolder
-      } as any, 
-      null as any, 
-      {read:languageReaderRead} as any, 
-      {getComponentCode}
-      );
-
-      const componentAssetFolderPath = 'component1';
-      const mockIsJs = {pass:'through'} as any;
-      const componentCode = await requiringComponentFolderOptionsProvider.getComponentCode(componentAssetFolderPath,mockIsJs);
-
-      expect(getComponentCode).toHaveBeenCalledWith(languageReaderResult.readPath,languageReaderResult.code);
-      expect(componentCode.code).toBe(parsedCode);
-    })
-
-    describe('errors', () => {
-      describe('it should throw error if the language reader cannot find the file to parse', () => {
-        const mockSearchPathsTests = [['react-readme.js'],['react-readme.ts','react-readme.tsx','react-readme.js']];
-        mockSearchPathsTests.forEach(mockSearchPaths => {
-          const description = mockSearchPaths.length===1?'Cannot find ':'Cannot find one of ';
-          it(description, () => {
-            const getReactReadmeInFolder = jest.fn().mockReturnValue('react-readme.js');
-      
-            const requiringComponentFolderOptionsProvider = new RequiringComponentFolderOptionsProvider(
-              {
-                getReactReadmeInFolder
-              } as any, 
-              null as any, 
-              {
-                read:()=>Promise.resolve(undefined) as any, 
-                searchPaths:()=>mockSearchPaths
-              } as any,
-              null as any
-            );
-            let expectedErrorMessage = description
-            if(mockSearchPaths.length===1){
-              expectedErrorMessage += mockSearchPaths[0];
-            }else{
-              expectedErrorMessage+= mockSearchPaths.join();
-            }
-            return expect(requiringComponentFolderOptionsProvider.getComponentCode('',true)).rejects.toThrow(expectedErrorMessage)
-          })
-        })
       })
-      it('should throw wrapped error with the path of file being parsed if the options parser throws', () => {
-        const getReactReadmeInFolder = jest.fn();
+    })
+    describe('getComponentCode', () => {
+      it('should use common - parsing with the optionsParser.getComponentCode', async () => {
+        const propsCode:{code:string,language:string} = {code:'function(){}',language:'language'}
+        const getComponentCode = jest.fn();
+        const requiringComponentFolderOptionsProvider = new RequiringComponentFolderOptionsProvider(
+          null as any, 
+          null as any, 
+          null as any, 
+          {getComponentCode} as any
+        );
+        const common = jest.fn().mockResolvedValue(propsCode);
+        requiringComponentFolderOptionsProvider['common'] = common;
+
+        const mockIsJs = {isJs:true} as any;
+        const result = await requiringComponentFolderOptionsProvider.getComponentCode('path',mockIsJs);
+
+        expect(result).toBe(propsCode);
+        expect(common).toHaveBeenCalledWith('path',mockIsJs,expect.any(Function),'component');
+        
+        common.mock.calls[0][2]('readpath','code');
+        expect(getComponentCode).toHaveBeenCalledWith('readpath','code');
+
+      })
+    })
+    describe('common', () => {
+      it('should return the language found by the language reader for the react-readme', async () => {
+        const reactReadmepath='react-readme.js';
+        const getReactReadmeInFolder = jest.fn().mockReturnValue(reactReadmepath);
   
         const languageReaderResult:LanguageReaderResult = {
           code:'code',
           language:'javascript',
-          readPath:'react-readme.someExtension'
+          readPath:'readpath'
         }
         const languageReaderRead = jest.fn().mockResolvedValue(languageReaderResult);
-        
-        const optionsParseError = new Error('Parse error');
+        const getComponentCode = jest.fn().mockReturnValue('parsed code');
   
         const requiringComponentFolderOptionsProvider = new RequiringComponentFolderOptionsProvider({
           getReactReadmeInFolder
         } as any, 
         null as any, 
         {read:languageReaderRead} as any, 
-        {getComponentCode(){
-          throw optionsParseError
-        }}
+        {getComponentCode} as any
         );
+        const componentAssetFolderPath = 'component1';
+        const mockIsJs = {pass:'through'} as any;
+        const componentCode = await requiringComponentFolderOptionsProvider['common'](componentAssetFolderPath,mockIsJs,()=>'','');
+  
+        expect(componentCode.language).toBe(languageReaderResult.language);
+        expect(getReactReadmeInFolder).toHaveBeenCalledWith(componentAssetFolderPath);
+        expect(languageReaderRead).toHaveBeenCalledWith(reactReadmepath,mockIsJs);
         
-        return expect(requiringComponentFolderOptionsProvider.getComponentCode('',false)).rejects.toThrow('error parsing component in react-readme.someExtension\nParse error')
-      });
-
-      [undefined,''].forEach(parsedCode => {
-        const suffix = parsedCode === undefined?'undefined':'empty string'
-        it(`should throw error with the path of file being parsed if the options parser return ${suffix}`, () => {
+      })
+      it('should return parsed code of the react-readme found by the language reader', async () => {
+        const getReactReadmeInFolder = jest.fn();
+  
+        const languageReaderResult:LanguageReaderResult = {
+          code:'code',
+          language:'javascript',
+          readPath:'readpath'
+        }
+        const languageReaderRead = jest.fn().mockResolvedValue(languageReaderResult);
+        const parsedCode = 'parsed code';
+  
+        const requiringComponentFolderOptionsProvider = new RequiringComponentFolderOptionsProvider({
+          getReactReadmeInFolder
+        } as any, 
+        null as any, 
+        {read:languageReaderRead} as any, 
+        null as any
+        );
+  
+        const componentAssetFolderPath = 'component1';
+        const mockIsJs = {pass:'through'} as any;
+        const parser = jest.fn().mockReturnValue(parsedCode);
+        const componentCode = await requiringComponentFolderOptionsProvider['common'](componentAssetFolderPath,mockIsJs,parser,'');
+  
+        expect(componentCode.code).toBe(parsedCode);
+        expect(parser).toHaveBeenCalledWith(languageReaderResult.readPath,languageReaderResult.code);
+      })
+  
+      describe('errors', () => {
+        describe('it should throw error if the language reader cannot find the file to parse', () => {
+          const mockSearchPathsTests = [['react-readme.js'],['react-readme.ts','react-readme.tsx','react-readme.js']];
+          mockSearchPathsTests.forEach(mockSearchPaths => {
+            const description = mockSearchPaths.length===1?'Cannot find ':'Cannot find one of ';
+            it(description, () => {
+              const getReactReadmeInFolder = jest.fn().mockReturnValue('react-readme.js');
+        
+              const requiringComponentFolderOptionsProvider = new RequiringComponentFolderOptionsProvider(
+                {
+                  getReactReadmeInFolder
+                } as any, 
+                null as any, 
+                {
+                  read:()=>Promise.resolve(undefined) as any, 
+                  searchPaths:()=>mockSearchPaths
+                } as any,
+                null as any
+              );
+              let expectedErrorMessage = description
+              if(mockSearchPaths.length===1){
+                expectedErrorMessage += mockSearchPaths[0];
+              }else{
+                expectedErrorMessage+= mockSearchPaths.join();
+              }
+              return expect(requiringComponentFolderOptionsProvider['common']('',true,null as any,'')).rejects.toThrow(expectedErrorMessage)
+            })
+          })
+        })
+        it('should throw wrapped error with the path of file being parsed if the parser throws', () => {
           const getReactReadmeInFolder = jest.fn();
-
+    
+          const languageReaderResult:LanguageReaderResult = {
+            code:'code',
+            language:'javascript',
+            readPath:'react-readme.someExtension'
+          }
+          const languageReaderRead = jest.fn().mockResolvedValue(languageReaderResult);
+          
+          const optionsParseError = new Error('Parse error');
+    
+          const requiringComponentFolderOptionsProvider = new RequiringComponentFolderOptionsProvider({
+            getReactReadmeInFolder
+          } as any, 
+          null as any, 
+          {read:languageReaderRead} as any, 
+          null as any
+          );
+          
+          return expect(requiringComponentFolderOptionsProvider['common']('',false,()=>{throw optionsParseError},'thingbeingparsed')).rejects.toThrow('error parsing thingbeingparsed in react-readme.someExtension\nParse error')
+        });
+  
+        it(`should throw error with the path of file being parsed if the options parser returns undefined`, () => {
+          const getReactReadmeInFolder = jest.fn();
+  
           const languageReaderResult:LanguageReaderResult = {
             code:'code',
             language:'javascript',
@@ -184,19 +229,16 @@ describe('RequiringComponentFolderOptionsProvider', () => {
           } as any, 
           null as any, 
           {read:languageReaderRead} as any, 
-          {getComponentCode(){
-            return parsedCode
-          }}
+          null as any
           );
-
-          return expect(requiringComponentFolderOptionsProvider.getComponentCode('',false)).rejects.toThrow('could not parse component in react-readme.someExtension')
+  
+          return expect(requiringComponentFolderOptionsProvider['common']('',false,()=>undefined,'thingbeingparsed')).rejects.toThrow('could not parse thingbeingparsed in react-readme.someExtension')
         
         })
+  
+        
       })
-
-      
     })
-
-    
   })
+  
 })

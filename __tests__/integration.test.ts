@@ -174,13 +174,15 @@ describe('generate', () => {
   }
   //#endregion
   describe('no props', () => {
-    interface NoPropsIntegrationTest{
+    type ExpectedAddComponentGenerations = Array<{imageDetails:ImageDetails|undefined,codeDetails:CodeDetails,useReadme?:true,readme?:string}>;
+    interface IntegrationTest{
       description:string,
       folderArgs:ConstructorParameters<typeof ReadmeAssetsFolder>,
       additionalFiles?:GeneratedFile[]
       expectedSurroundPre:string|undefined,
       expectedSurroundPost:string|undefined,
-      expectedAddComponentGenerations:Array<{imageDetails:ImageDetails,codeDetails:CodeDetails}>
+      expectedAddComponentGenerations:ExpectedAddComponentGenerations
+      
       additionalExpectations?:(readmeAssetFolder:ReadmeAssetsFolder)=>Promise<void>|void
       afterFolderCreation?:(readmeAssetFolder:ReadmeAssetsFolder)=>Promise<void>|void
     }
@@ -200,9 +202,9 @@ describe('generate', () => {
         fileName:`index.${extension}`
       }
     }
-    function createComponentFolders(andTs:boolean,exportType:ExportType='ExportsEquals'){
+    function createComponentFolders(andTs:boolean,exportType:ExportType='ExportsEquals',folderName1='Component1',folderName2='Component2'){
       function createComponentFolder(isComponent1:boolean){
-        const component = isComponent1?'Component1':'Component2';
+        const component = isComponent1?folderName1:folderName2;
         const code = andTs?
           [createCodeFile('js',isComponent1,exportType),createCodeFile('ts',isComponent1,exportType)]:
           createCodeFile('js',isComponent1,exportType);
@@ -236,13 +238,13 @@ describe('generate', () => {
         {
           codeDetails:{code:(jsOnlyComponentFolders[0].code as GeneratedFile).contents,language:'javascript'},
           imageDetails:{
-            altText:jsOnlyComponentFolders[0].name,
+            altText:'',
             componentImagePath:path.join(assetsFolder,'images',`${jsOnlyComponentFolders[0].name}.png`)}
         },
         {
           codeDetails:{code:(jsOnlyComponentFolders[1].code as GeneratedFile).contents,language:'javascript'},
           imageDetails:{
-            altText:jsOnlyComponentFolders[1].name,
+            altText:'',
             componentImagePath:path.join(assetsFolder,'images',`${jsOnlyComponentFolders[1].name}.png`)}
         }
       ]
@@ -254,13 +256,13 @@ describe('generate', () => {
         {
           codeDetails:{code:(componentFolders[0].code as GeneratedFile[])[index].contents,language},
           imageDetails:{
-            altText:componentFolders[0].name,
+            altText:'',
             componentImagePath:path.join(assetsFolder,'images',`${componentFolders[0].name}.${imageType}`)}
         },
         {
           codeDetails:{code:(componentFolders[1].code as GeneratedFile[])[index].contents,language},
           imageDetails:{
-            altText:componentFolders[1].name,
+            altText:'',
             componentImagePath:path.join(assetsFolder,'images',`${componentFolders[1].name}.${imageType}`)}
         }
       ]
@@ -268,9 +270,9 @@ describe('generate', () => {
 
     //#region tests
 
-    const basicNoPropsTest:NoPropsIntegrationTest=(()=>{
+    const basicNoPropsTest:IntegrationTest=(()=>{
       
-      const test:NoPropsIntegrationTest = {
+      const test:IntegrationTest = {
         description:'Default assets folder, no react-readme.js, pre and post',
         folderArgs:[
           [{suffix:'Pre',readme:'Pre'},{suffix:'Post',readme:'Post'}],
@@ -286,9 +288,9 @@ describe('generate', () => {
     })();
 
     //root react-readme.js
-    const differentAssetsFolderTest:NoPropsIntegrationTest = (()=>{
+    const differentAssetsFolderTest:IntegrationTest = (()=>{
       const customAssetsFolder = 'CustomReadmeAssets';
-      const test:NoPropsIntegrationTest = {
+      const test:IntegrationTest = {
         description:'Root react-readme.js specifying folder path. No explicit pre, no post',
         expectedSurroundPre:'Pre',
         expectedSurroundPost:undefined,
@@ -307,8 +309,8 @@ describe('generate', () => {
       }
       return test;
     })();
-    const typescriptCodeTest:NoPropsIntegrationTest = (() => {
-      const test:NoPropsIntegrationTest = {
+    const typescriptCodeTest:IntegrationTest = (() => {
+      const test:IntegrationTest = {
         description:'typescript by default chosen over javascript',
         expectedSurroundPre:'Pre',
         expectedSurroundPost:undefined,
@@ -323,8 +325,8 @@ describe('generate', () => {
       return test;
     })();
     //root react-readme.js
-    const puppetterLaunchOptionsTest:NoPropsIntegrationTest = (()=> {
-      const test:NoPropsIntegrationTest={
+    const puppetterLaunchOptionsTest:IntegrationTest = (()=> {
+      const test:IntegrationTest={
         description:'Puppetter launch options from global options',
         expectedAddComponentGenerations:[],
         expectedSurroundPre:undefined,
@@ -344,8 +346,8 @@ describe('generate', () => {
       }
       return test;
     })();
-    const cleansImagesTest:NoPropsIntegrationTest = (()=> {
-      const test:NoPropsIntegrationTest={
+    const cleansImagesTest:IntegrationTest = (()=> {
+      const test:IntegrationTest={
         description:'Test cleans images',
         expectedAddComponentGenerations:[],
         expectedSurroundPre:undefined,
@@ -368,8 +370,8 @@ describe('generate', () => {
       return test;
     })();
 
-    const preferJsGlobalTest:NoPropsIntegrationTest = (()=> {
-      const test:NoPropsIntegrationTest={
+    const preferJsGlobalTest:IntegrationTest = (()=> {
+      const test:IntegrationTest={
         description:'Prefer js in global options',
         expectedAddComponentGenerations:getJsTsExpectedAddComponentGeneration(false),
         expectedSurroundPre:undefined,
@@ -385,13 +387,13 @@ describe('generate', () => {
       return test;
     })();
 
-    const noCodeGenerationTestGlobal:NoPropsIntegrationTest = (()=> {
+    const noCodeGenerationTestGlobal:IntegrationTest = (()=> {
       const componentGenerations =getJsTsExpectedAddComponentGeneration(false);
       componentGenerations.forEach(componentGeneration => {
         componentGeneration.codeDetails.code='';
         componentGeneration.codeDetails.language='';
       })
-      const test:NoPropsIntegrationTest={
+      const test:IntegrationTest={
         description:'No code generation in global options',
         expectedAddComponentGenerations:componentGenerations,
         expectedSurroundPre:undefined,
@@ -408,8 +410,8 @@ describe('generate', () => {
     })();
     
     //root react-readme.js 
-    const imageTypeJpegTest:NoPropsIntegrationTest = (()=> {
-      const test:NoPropsIntegrationTest={
+    const imageTypeJpegTest:IntegrationTest = (()=> {
+      const test:IntegrationTest={
         description:'Global image type',
         expectedAddComponentGenerations:getJsTsExpectedAddComponentGeneration(true,undefined,'jpeg'),
         expectedSurroundPre:undefined,
@@ -434,12 +436,12 @@ describe('generate', () => {
     })();
 
     //root react-readme.js
-    const codeReplacerTest:NoPropsIntegrationTest = (()=> {
+    const codeReplacerTest:IntegrationTest = (()=> {
       const expectedAddComponentGenerations = getJsTsExpectedAddComponentGeneration(true);
       expectedAddComponentGenerations.forEach(expectedCodeGeneration => {
         expectedCodeGeneration.codeDetails.code += 'replaced';
       })
-      const test:NoPropsIntegrationTest={
+      const test:IntegrationTest={
         description:'Global code replacer',
         expectedAddComponentGenerations,
         expectedSurroundPre:undefined,
@@ -455,7 +457,7 @@ describe('generate', () => {
       return test;
     })();
 
-    const optionsMerging:NoPropsIntegrationTest = (()=> {
+    const optionsMerging:IntegrationTest = (()=> {
       const componentFolders = createComponentFolders(true);
       componentFolders[0].reactReadme = `
         module.exports = {
@@ -468,7 +470,7 @@ describe('generate', () => {
       const pngPath= expectedAddComponentGenerations[1].imageDetails.componentImagePath;
       expectedAddComponentGenerations[1].imageDetails.componentImagePath = pngPath.replace('png','jpeg');
 
-      const test:NoPropsIntegrationTest={
+      const test:IntegrationTest={
         description:'Options merging',
         expectedAddComponentGenerations,
         expectedSurroundPre:undefined,
@@ -491,7 +493,7 @@ describe('generate', () => {
       return test;
     })();
 
-    const componentScreenshotsTest:NoPropsIntegrationTest = (()=> {
+    const componentScreenshotsTest:IntegrationTest = (()=> {
       const componentFolders = createComponentFolders(true);
       
       componentFolders[0].reactReadme = `
@@ -505,7 +507,7 @@ describe('generate', () => {
       const pngPath= expectedAddComponentGenerations[1].imageDetails.componentImagePath;
       expectedAddComponentGenerations[1].imageDetails.componentImagePath = pngPath.replace('png','jpeg');
 
-      const test:NoPropsIntegrationTest={
+      const test:IntegrationTest={
         description:'component screenshots',
         expectedAddComponentGenerations,
         expectedSurroundPre:undefined,
@@ -556,13 +558,13 @@ describe('generate', () => {
       return test;
     })();
 
-    const componentScreenshotsExportDefaultTest:NoPropsIntegrationTest = (()=> {
+    const componentScreenshotsExportDefaultTest:IntegrationTest = (()=> {
       const componentFolders = createComponentFolders(true,'ExportsDefault');
       
       
       const expectedAddComponentGenerations = getJsTsExpectedAddComponentGeneration(true,undefined,undefined,componentFolders)
 
-      const test:NoPropsIntegrationTest={
+      const test:IntegrationTest={
         description:'component screenshots, Component is exports.default',
         expectedAddComponentGenerations,
         expectedSurroundPre:undefined,
@@ -620,7 +622,7 @@ describe('generate', () => {
         language:typescript?'typescript':'javascript'
       }
       
-      const test:NoPropsIntegrationTest={
+      const test:IntegrationTest={
         description,
         expectedAddComponentGenerations,
         expectedSurroundPre:undefined,
@@ -653,7 +655,7 @@ describe('generate', () => {
     const importedComponentInReadmePathTypescriptTest = createComponentInReadmeTest('Component imported in readme, path found, typescript used',undefined, true);
 
 
-    function createInlineComponentInReadmeTest(reactReadmeExtension:CodeExtension):NoPropsIntegrationTest{
+    function createInlineComponentInReadmeTest(reactReadmeExtension:CodeExtension):IntegrationTest{
       
       const getReactReadmeAndComponent=(extension:CodeExtension)=>{
         function getExportsEquals(isJs:boolean,equalTo:string){
@@ -705,7 +707,7 @@ describe('generate', () => {
           return reactReadmes;
         }
       }
-      const test:NoPropsIntegrationTest = {
+      const test:IntegrationTest = {
         description:`inline component ${reactReadmeExtension}`,
         expectedSurroundPost:undefined,
         expectedSurroundPre:undefined,
@@ -716,7 +718,7 @@ describe('generate', () => {
           undefined
         ],
         expectedAddComponentGenerations:[{
-          imageDetails:{altText:'InlineComponent',componentImagePath:path.join('README-assets','images','InlineComponent.png')},
+          imageDetails:{altText:'',componentImagePath:path.join('README-assets','images','InlineComponent.png')},
           codeDetails:{code:expectedReadmeComponent,language:expectedLanguage!}
         }],
         additionalExpectations:()=>{
@@ -728,11 +730,140 @@ describe('generate', () => {
     }
 
     const inlineComponentTests = (['js','ts','tsx'] as Array<CodeExtension>).map(ext => createInlineComponentInReadmeTest(ext));
+    
+    const altTextAndSortingTest:IntegrationTest = (()=> {
+      const componentFolders = createComponentFolders(false,undefined,'ComponentX_2','ComponentY_1');
+      componentFolders[0].reactReadme = `
+        module.exports = {
+          altText:'Component options alt text'
+        }
+      `
+      const expectedAddComponentGenerations:ExpectedAddComponentGenerations = [
+        {
+          codeDetails:{code:(componentFolders[1].code as GeneratedFile).contents,language:'javascript'},
+          imageDetails:{
+            altText:'ComponentY',
+            componentImagePath:path.join('README-assets','images',`ComponentY.png`)
+          },
+          useReadme:true,
+          readme:'ComponentY_1 read me'
+        },
+        {
+          codeDetails:{code:(componentFolders[0].code as GeneratedFile).contents,language:'javascript'},
+          imageDetails:{
+            altText:'Component options alt text',
+            componentImagePath:path.join('README-assets','images',`ComponentX.png`)
+          },
+          useReadme:true,
+          readme:'ComponentX_2 read me'
+        },
+      ]
+      
+      const test:IntegrationTest = {
+        description:'Alt text',
+        expectedSurroundPost:undefined,
+        expectedSurroundPre:undefined,
+        expectedAddComponentGenerations,
+        folderArgs:[
+          [],
+          componentFolders,
+          undefined,
+          `
+          module.exports = {
+            altTextFromFolderName:true
+          }
+          `
+        ]
+      }
+      return test;
+    })();
     //#endregion
     
-    
+    const propsIntegrationTest:IntegrationTest = (() => {
+      //ideally will create additional props.readme
+      //will want to provide and not provide alt text
+      //will need the react readme
+      //additional expectations
 
-    const noPropsIntegrationTests:NoPropsIntegrationTest[] = [
+      //will do with react-readme as js first ( is there a test that uses ts ?)
+      //get react readmes
+      //need to parameterize with the propsCodeInReadme
+
+      const componentFolders:ComponentFolder[] = [
+        {
+          code:{ // should change to allow undefined if allowing in the react readme
+            contents:'module.exports = function (){}',
+            fileName:'index.js'
+          },
+          name:'Component',
+          readme:'component readme',
+          reactReadme:`
+            module.exports = {
+              props:[
+                {prop1:1},[{prop1:2},{altText:'props2 alt text', readme:'props2 read me'}]
+              ]
+            }
+          `
+        }
+      ]  
+      
+      const expectedAddComponentGenerations:ExpectedAddComponentGenerations = [
+        {
+          useReadme:true,
+          readme:'component readme',
+          codeDetails:{
+            code:(componentFolders[0].code as any).contents,
+            language:'javascript'
+          },
+          imageDetails:undefined,
+        },
+        {
+          useReadme:true,
+          readme:undefined,
+          codeDetails:{
+            code:'{prop1:1}',
+            language:'javascript'
+          },
+          imageDetails:{
+            altText:'',
+            componentImagePath:path.join('README-assets','images',`Component-props-0.png`)
+          }
+        },
+        {
+          useReadme:true,
+          readme:'props2 read me',
+          codeDetails:{
+            code:'{prop1:2}',
+            language:'javascript'
+          },
+          imageDetails:{
+            altText:'props2 alt text',
+            componentImagePath:path.join('README-assets','images',`Component-props-1.png`)
+          }
+        },
+
+      ]
+
+      const test:IntegrationTest = {
+        description:'Props',
+        expectedSurroundPost:undefined,
+        expectedSurroundPre:undefined,
+        expectedAddComponentGenerations,
+        folderArgs:[
+          [],
+          componentFolders,
+          undefined,
+          `
+          module.exports = {
+            altTextFromFolderName:true
+          }
+          `
+        ]
+      }
+      return test;
+    })();
+
+    const tests:IntegrationTest[] = [
       basicNoPropsTest,
       differentAssetsFolderTest,
       typescriptCodeTest, // ts over js is the default
@@ -748,14 +879,16 @@ describe('generate', () => {
       importedComponentInReadmePathTypescriptTest,
       componentScreenshotsTest,
       componentScreenshotsExportDefaultTest,
-      ...inlineComponentTests
+      ...inlineComponentTests,
+      altTextAndSortingTest,
+      propsIntegrationTest
     ]
 
     
     afterAll(()=>{
       ReadmeAssetsFolder.cleanUpAllTests();
     })
-    noPropsIntegrationTests.forEach(test => {
+    tests.forEach(test => {
       it(`${test.description}`, async() => {
         const readmeAssetsFolder = new ReadmeAssetsFolder(...test.folderArgs);
         if(test.additionalFiles && test.additionalFiles.length>0){
@@ -789,7 +922,8 @@ describe('generate', () => {
                 .toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(
                   i+1,
                   expectedAddComponentGeneration.codeDetails,
-                  componentFolders[i].readme,
+                  //first case when the folders are prefix sorted
+                  expectedAddComponentGeneration.useReadme?expectedAddComponentGeneration.readme:componentFolders[i].readme,
                   expectedAddComponentGeneration.imageDetails);
             })
           })();
@@ -801,7 +935,7 @@ describe('generate', () => {
         
         await generateAndExpect();
         
-      })
+      },100000)
       
     })
     

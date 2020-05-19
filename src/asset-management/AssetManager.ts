@@ -20,7 +20,7 @@ export interface ComponentOptionsCommon{
 }
 export type ComponentOptionsNoId = Omit<ComponentOptionsCommon,'id'>;
 
-export type GlobalComponentOptions = ComponentOptionsCommon|undefined
+export type GlobalComponentOptions = ComponentOptionsCommon&{altTextFromFolderName?:boolean}|undefined
 
 export interface IAssetManagerOptions{
   readmeAssetsFolderPath:string,
@@ -36,6 +36,7 @@ export interface IAssetFolderProvider{
 export interface PropsOptions{
   readme?:string,
   readmeFileName?:string,
+  altText?:string,
   screenshotOptions?:ReadmeComponentScreenshotOptions
 }
 export type Props = Record<string,any>
@@ -47,7 +48,8 @@ export type ComponentOptions = ComponentOptionsCommon &
     componentPath?:string,
     component?:React.ComponentType,
     componentKey?:string,
-    props?:ComponentOptionsProps
+    props?:ComponentOptionsProps,
+    altText?:string
   }
 export interface ComponentInfoProvider<T={}>{
   getComponentInfos(readmeAssetsFolderPath:string,globalOptions:T&GlobalComponentOptions):Promise<ComponentInfo[]>

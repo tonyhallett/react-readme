@@ -39,6 +39,7 @@ export interface ComponentInfo {
   readme:string|undefined,
   name:string,
   componentScreenshot?:ComponentInfoScreenshotOptions
+  altText?:string
 }
 
 export interface IAssetManager{

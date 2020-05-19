@@ -147,7 +147,8 @@ describe('generate', () => {
           readme:'readme1',
           componentScreenshot:{
             type:'jpeg'
-          } as any
+          } as any,
+          altText:'alt text1'
         },
         {
           codeDetails:{
@@ -158,7 +159,7 @@ describe('generate', () => {
           readme:'readme2',
           componentScreenshot:{
 
-          } as any
+          } as any,
         },
         {
           codeDetails:{
@@ -197,9 +198,9 @@ describe('generate', () => {
         expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(1,componentInfos[0].codeDetails,componentInfos[0].readme,expect.objectContaining({componentImagePath:'relative/readme-assets/images/Name1.jpeg'}));
         expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(2,componentInfos[1].codeDetails,componentInfos[1].readme,expect.objectContaining({componentImagePath:'relative/readme-assets/images/Name2.png'}));
       })
-      it('should add the component name as the alt text', () => {
-        expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(1,componentInfos[0].codeDetails,componentInfos[0].readme,expect.objectContaining({altText:componentInfos[0].name}));
-        expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(2,componentInfos[1].codeDetails,componentInfos[1].readme,expect.objectContaining({altText:componentInfos[1].name}));
+      it('should use alt text if provided else empty string', () => {
+        expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(1,componentInfos[0].codeDetails,componentInfos[0].readme,expect.objectContaining({altText:componentInfos[0].altText}));
+        expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(2,componentInfos[1].codeDetails,componentInfos[1].readme,expect.objectContaining({altText:''}));
       })
       it('should have have image details undefined if no screenshot', () => {
         expect(generatedReadme.addComponentGeneration).toHaveBeenNthCalledWith<Parameters<GeneratedReadme['addComponentGeneration']>>(3,componentInfos[2].codeDetails,componentInfos[2].readme,undefined);

@@ -22,14 +22,13 @@ export default async function generate(
         relativeComponentImagePath = generatedReadMeWriter.getRelativePath(componentImagePath);
       }
       
-
       
       generatedReadMe.addComponentGeneration(
         componentInfo.codeDetails, 
         componentInfo.readme, 
         componentScreenshot?
         { componentImagePath: relativeComponentImagePath!, 
-          altText: componentInfo.name 
+          altText: componentInfo.altText?componentInfo.altText:'' 
         }:undefined
       );
       

@@ -1,5 +1,5 @@
-import { CodeReplacer, ComponentOptions, CodeInReadme, ComponentOptionsCommon, ComponentOptionsProps, PropsOrPropsWithOptions, Props, PropsOptions, } from "../src/asset-management/AssetManager"
-import { AssetFolderProvider, IComponentSorter, SortedComponentFolder, IComponentFolderOptionsProvider, ComponentOptionsWithProps, PropsAndOptions, ComponentComponentInfo} from "../src/asset-management/AssetFolderProvider"
+import { CodeReplacer, ComponentOptions, CodeInReadme, ComponentOptionsCommon, ComponentOptionsProps, PropsOrPropsWithOptions, Props, PropsOptions, GlobalComponentOptions, } from "../src/asset-management/AssetManager"
+import { AssetFolderProvider, IComponentSorter, SortedComponentFolder, IComponentFolderOptionsProvider, ComponentOptionsWithProps, PropsAndOptions, ComponentComponentInfo, PropsCodeDetails} from "../src/asset-management/AssetFolderProvider"
 import { CodeDetails, ComponentInfo } from "../src/interfaces";
 import { LanguageReaderResult } from "../src/asset-management/LanguageReader";
 
@@ -134,21 +134,28 @@ describe('AssetFolderProvider', () => {
           };
           const getComponentComponentInfo = jest.fn().mockResolvedValue(mockComponentComponentInfo);
           
-          const propsCodeDetailsFirst:CodeDetails = {
-            code:'props 1 code',
-            language:'javascript'
-          }
-          const propsCodeDetailsSecond:CodeDetails = {
-            code:'props 2 code',
+          const propsCodeDetails:PropsCodeDetails = {
+            code:['props 1 code','props 2 code'],
             language:'javascript'
           }
           let getPropsCodeDetails:jest.Mock 
 
           
-          let propsAndOptionsFirst:ReturnType<AssetFolderProvider['getPropsAndOptions']> = {props:{prop1:1},propsOptions:{screenshotOptions:{
-            css:'From props options'
-          }}};
-          let propsAndOptionsSecond:ReturnType<AssetFolderProvider['getPropsAndOptions']> = {props:{prop1:2},propsOptions:{}};
+          let propsAndOptionsFirst:ReturnType<AssetFolderProvider['getPropsAndOptions']> = {
+            props:{prop1:1},
+            propsOptions:{
+              screenshotOptions:{
+                css:'From props options',
+              },
+              altText:'props 1 alt text'
+            }
+          };
+          let propsAndOptionsSecond:ReturnType<AssetFolderProvider['getPropsAndOptions']> = {
+            props:{prop1:2},
+            propsOptions:{
+              altText:'props 2 alt text'
+            }
+          };
           let getPropsAndOptions:jest.Mock
           
           const propsReadmeFirst = 'props 1 readme';
@@ -156,7 +163,7 @@ describe('AssetFolderProvider', () => {
           let getPropsReadme:jest.Mock
           function generateComponentInfosForAllPropsTest(componentOptions:ComponentOptionsWithProps,mergedOptions:ComponentOptionsCommon){
             getPropsAndOptions = jest.fn().mockReturnValueOnce(propsAndOptionsFirst).mockReturnValueOnce(propsAndOptionsSecond);
-            getPropsCodeDetails = jest.fn().mockResolvedValueOnce(propsCodeDetailsFirst).mockResolvedValueOnce(propsCodeDetailsSecond);
+            getPropsCodeDetails = jest.fn().mockResolvedValue(propsCodeDetails);
             getPropsReadme = jest.fn().mockResolvedValueOnce(propsReadmeFirst).mockResolvedValueOnce(propsReadmeSecond);
             const assetFolderProvider = new AssetFolderProvider(null as any,null as any, null as any, null as any, null as any);
             assetFolderProvider['getComponentComponentInfo'] = getComponentComponentInfo;
@@ -227,11 +234,9 @@ describe('AssetFolderProvider', () => {
               }
               const mergedOptions = {merged:'option'} as any;
               const result = await generateComponentInfosForAllPropsTest(componentOptions,mergedOptions);
-              expect(result[1].codeDetails).toBe(propsCodeDetailsFirst);
-              expect(result[2].codeDetails).toBe(propsCodeDetailsSecond);
-              [1,2].forEach(nthCall => {
-                expect(getPropsCodeDetails).toHaveBeenNthCalledWith(nthCall,mergedOptions,'path');
-              })
+              expect(result[1].codeDetails).toEqual<CodeDetails>({code:propsCodeDetails.code[0],language:propsCodeDetails.language});
+              expect(result[2].codeDetails).toEqual<CodeDetails>({code:propsCodeDetails.code[1],language:propsCodeDetails.language});
+              expect(getPropsCodeDetails).toHaveBeenCalledWith(mergedOptions,'path');
             })
             describe('getPropsCodeDetails', () => {
               it('should be undefined if mergedOptions.propsCodeInReadme is None',async () => {
@@ -369,11 +374,20 @@ describe('AssetFolderProvider', () => {
               }
               const result = await generateComponentInfosForAllPropsTest(componentOptions,{});
               
-              expect(result[1].name).toBe(`${componentAssetFolderName}props0`);
-              expect(result[2].name).toBe(`${componentAssetFolderName}props1`);
+              expect(result[1].name).toBe(`${componentAssetFolderName}-props-0`);
+              expect(result[2].name).toBe(`${componentAssetFolderName}-props-1`);
 
               expect(getPropsReadme).toHaveBeenNthCalledWith(1,propsAndOptionsFirst.propsOptions,'path');
               expect(getPropsReadme).toHaveBeenNthCalledWith(2,propsAndOptionsSecond.propsOptions,'path');
+            })
+            it('should have alt text from props options', async () => {
+              const componentOptions:ComponentOptionsWithProps = {
+                props:[{prop1:1},{prop1:2}]
+              }
+              const result = await generateComponentInfosForAllPropsTest(componentOptions,{});
+              
+              expect(result[1].altText).toBe('props 1 alt text');
+              expect(result[2].altText).toBe('props 2 alt text');
             })
           })
 
@@ -884,6 +898,68 @@ describe('AssetFolderProvider', () => {
           });
           
         })
+        describe('alt text', () => {
+          interface AltTextTest{
+            description:string,
+            globalOptions?:GlobalComponentOptions,
+            componentOptions?:ComponentOptions,
+            expectedAltText:string
+          }
+          const tests:AltTextTest[] = [
+            {
+              description:'should come from component options if present',
+              componentOptions:{
+                altText:'from component options'
+              },
+              globalOptions:{
+                altTextFromFolderName:true
+              },
+              expectedAltText:'from component options'
+            },
+            {
+              description:'should come from folder name if set on global options and no component options',
+              globalOptions:{
+                altTextFromFolderName:true
+              },
+              expectedAltText:'Component'
+            }
+          ];
+          tests.forEach(test => {
+            
+            it(test.description, async () => {
+            
+              const assetFolderProvider = new AssetFolderProvider(
+                {
+                  path:{
+                    join(...paths:string[]){return paths.join('/')}
+                  }
+                } as any,
+                {} as any,
+                {
+                  getOptions:()=>Promise.resolve(test.componentOptions)
+                } as any,
+                noopSorter,
+                {} as any
+              );
+              
+              assetFolderProvider['getMergedOptions']=()=>({});
+              assetFolderProvider.readComponentReadMe = () => Promise.resolve('');
+              assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
+              assetFolderProvider['getComponentByPath'] = () => null as any;
+              if(test.globalOptions){
+                assetFolderProvider['globalOptions'] = test.globalOptions
+              }
+
+              const componentAssetFolderPath = 'readme-assets/components/Component';
+              const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+              
+              
+              expect(componentInfos.length).toBe(1);
+              expect(componentInfos[0].altText).toBe(test.expectedAltText);
+            })
+          
+          })
+        });
         
       })
         
