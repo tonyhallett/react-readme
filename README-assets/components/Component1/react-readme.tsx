@@ -1,5 +1,7 @@
+
+import * as React from 'react';
 export = {
-          component:()=>{
-            return <div>Component1</div>
-          }
-        }
+  component:()=>{
+    return <div style={{color:'white'}}>Component1</div>
+  }
+}

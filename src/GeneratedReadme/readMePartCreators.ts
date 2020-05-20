@@ -11,5 +11,5 @@ export function createMarkdownImageCreator(encoder:Encoder){
 }
 
 export function markdownCodeCreator(code:string,language:string){
-  return '```' + language + '\n' + code + '```'
+  return '```' + language + '\n' + code + '\n' + '```'
 }

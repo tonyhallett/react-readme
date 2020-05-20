@@ -2,14 +2,23 @@ import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as ts from 'typescript';
 import { generateReadme }   from '../src/index';
+import {createColoredLinebreakedSeparatorCreator,createWidthExpandingLineBreakedColoredDataSVGSeparator} from '../src/asset-management/separaterHelpers'
+
+
+const lineBreakedSeparatorCreator = createColoredLinebreakedSeparatorCreator(700,10);
+const red = '8c1925';
+const orange = '80eb34';
+const yellow = 'effa20';
+const blue = 'e89733';
+const green = '343ae3';
+
+const cyanSvgSeparator = createWidthExpandingLineBreakedColoredDataSVGSeparator(10)('cyan');
 
 const readmeAssetsPath = path.join(__dirname, '..','README-assets');
 async function cleanReadmeAssets(){
-  
   await fs.emptyDir(readmeAssetsPath);
   const generatedReadmePath =  path.join(__dirname, '..','README.md');
-  console.log('should remove: ' + generatedReadmePath);
-  //await fs.remove(generatedReadmePath)
+  await fs.remove(generatedReadmePath)
 }
 function ensureReadmeAssets(){
   return fs.ensureDir(readmeAssetsPath);
@@ -39,7 +48,7 @@ function compile(reactReadmes:string[]){
   const program =  ts.createProgram(
     reactReadmes,
     {
-      declaration:true,
+      //declaration:true,
       esModuleInterop:true,
       module:ts.ModuleKind.CommonJS,
       target:ts.ScriptTarget.ES2015,
@@ -80,27 +89,43 @@ async function createAndGenerate(pre:string,
     await generateReadme();
   }
 
+const inlineStyle = '<style type="text/css">p {color:red;}</style><p>okay</p>'
+
 async function demo1():Promise<void>{
   try{
     await createAndGenerate('pre','post',
     `export = {
-      
+      separators:{
+        first:'${lineBreakedSeparatorCreator(red,true)}',
+        last:\`${cyanSvgSeparator}\`,
+        //last:'${inlineStyle}\\n\\n',
+        componentSeparator:'${lineBreakedSeparatorCreator(orange,false)}',
+        componentPropsSeparator:'${lineBreakedSeparatorCreator(yellow,false)}',
+        propsSeparator:'${lineBreakedSeparatorCreator(green,false)}'
+      }
     }`,[
       {
         name:'Component1',
-        reactReadmeTsx:`export = {
-          component:()=>{
-            return <div>Component1</div>
-          }
-        }`
+        reactReadmeTsx:'' + 
+`
+import * as React from 'react';
+export = {
+  component:()=>{
+    return <div style={{color:'white'}}>Component1</div>
+  }
+}`
       },
       {
-        name:'Component2',
-        reactReadmeTsx:`export = {
-          component:()=>{
-            return <div>Component2</div>
-          }
-        }`
+        name:'Component_WithProps',
+        reactReadmeTsx:'' + 
+`
+import * as React from 'react';
+export = {
+  component:({color}:{color:string})=>{
+    return <div style={{color:color}}>Coloured by props</div>
+  },
+  props:[[{color:'red'},{readme:'Red props'}],[{color:'orange'},{readme:'Orange props'}],[{color:'green'},{readme:'Green props'}]]
+}`
       }
     ])}
   catch(e){

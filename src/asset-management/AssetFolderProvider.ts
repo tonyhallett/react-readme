@@ -89,7 +89,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
       const {props,propsOptions} = this.getPropsAndOptions(propsOrPropsWithOptions);
       
       let propsReadme = await this.getPropsReadme(propsOptions,componentAssetFolder);
-      const separatedReadme = this.getSeparatedReadme(propsReadme,separators?.propSeparator||separators?.componentPropsSeparator||separators?.componentSeparator);
+      const separatedReadme = this.getSeparatedReadme(propsReadme,separators?.propsSeparator||separators?.componentPropsSeparator||separators?.componentSeparator);
       const screenshotOptions = propsOptions.screenshotOptions||mergedOptions.screenshotOptions;
       const propsComponentInfo:ComponentInfo = {
         codeDetails:{
@@ -211,7 +211,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
   private async getOwnComponentInfos(separators:ComponentInfoSeparators|undefined): Promise<ComponentInfo[][]> {
     const componentAssetFolderNames = await this.system.fs.readdir(this.componentAssetsFolder);
     const orderedComponentAssetFolderNames = this.componentSorter.sort(componentAssetFolderNames);
-    return await Promise.all(orderedComponentAssetFolderNames.map(async (orderedComponentAssetFolderName,i) => {
+    return await Promise.all(orderedComponentAssetFolderNames.map( (orderedComponentAssetFolderName,i) => {
       const componentAssetFolder = this.system.path.join(this.componentAssetsFolder, orderedComponentAssetFolderName.componentFolderName);
       return this.getComponentInfosForFolder(componentAssetFolder, orderedComponentAssetFolderName.parsedName,i===0,separators);
     }));

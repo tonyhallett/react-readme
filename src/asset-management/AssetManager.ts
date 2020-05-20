@@ -29,7 +29,7 @@ export interface FirstLastSeparators{
 export interface ComponentInfoSeparators{
   componentSeparator?:string,
   componentPropsSeparator?:string,
-  propSeparator?:string
+  propsSeparator?:string
 }
 export type Separators = FirstLastSeparators & ComponentInfoSeparators;
 
@@ -38,7 +38,7 @@ export interface IAssetManagerOptions{
   puppeteerLaunchOptions:puppeteer.LaunchOptions|undefined,
   globalComponentOptions:GlobalComponentOptions,
   imageBeforeCode?:boolean
-  separators?:Separators
+  separators:Separators|undefined
 }
 
 export interface IAssetFolderProvider{

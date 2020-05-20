@@ -8,7 +8,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 const React = __importStar(require("react"));
 module.exports = {
-    component: () => {
-        return React.createElement("div", { style: { color: 'white' } }, "Component1");
-    }
+    component: ({ color }) => {
+        return React.createElement("div", { style: { color: color } }, "Coloured by props");
+    },
+    props: [[{ color: 'red' }, { readme: 'Red props' }], [{ color: 'orange' }, { readme: 'Orange props' }], [{ color: 'green' }, { readme: 'Green props' }]]
 };

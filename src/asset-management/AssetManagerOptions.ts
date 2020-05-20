@@ -1,16 +1,22 @@
-import { IAssetManagerOptions, ComponentOptionsCommon, GlobalComponentOptions } from "./AssetManager";
+import { IAssetManagerOptions, ComponentOptionsCommon, GlobalComponentOptions, Separators } from "./AssetManager";
 import { LaunchOptions } from 'puppeteer';
 import { ISystem } from "../interfaces";
 import { IGlobalOptionsProvider } from "./IOptionsProvider";
 
 
-export type GlobalRootOptions =(ComponentOptionsCommon & {readmeAssetsFolderPath?:string}&{puppeteerLaunchOptions?:LaunchOptions})|undefined
+export type GlobalRootOptions = (
+  ComponentOptionsCommon & 
+  {readmeAssetsFolderPath?:string} & 
+  {puppeteerLaunchOptions?:LaunchOptions} & 
+  {separators?:Separators}
+  )|undefined
 
 export class AssetManagerOptions implements IAssetManagerOptions {
   private options:GlobalRootOptions;
   puppeteerLaunchOptions:LaunchOptions|undefined
   readmeAssetsFolderPath!: string;
   globalComponentOptions: GlobalComponentOptions;
+  separators:Separators|undefined
   constructor(private readonly system:ISystem,private readonly optionsProvider:IGlobalOptionsProvider){}
   
   private fallbackDefaultReadmeAssetsFolderName():void{
@@ -36,6 +42,7 @@ export class AssetManagerOptions implements IAssetManagerOptions {
     await this.setOptionsAndReadmeAssetsFolderPath();
     if(this.options){
       this.puppeteerLaunchOptions = this.options.puppeteerLaunchOptions;
+      this.separators = this.options.separators;
       const {puppeteerLaunchOptions,readmeAssetsFolderPath,...other} = this.options; 
       this.globalComponentOptions = other;
     }

@@ -7,10 +7,10 @@ export class SuffixComponentSorter implements IComponentSorter{
     for(let i=0;i<componentFolderNames.length;i++){
       const componentFolderName = componentFolderNames[i];
       const {index,parsedName} = this.parseName(componentFolderName);
-      if(index===-1){
-        unsorted.push({componentFolderName,parsedName})
-      }else{
+      if(index>-1){
         sorted[index] = {componentFolderName,parsedName};
+      }else{
+        unsorted.push({componentFolderName,parsedName})
       }
     }
     return sorted.filter(s=>s!==undefined).concat(unsorted);
