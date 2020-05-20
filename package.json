@@ -12,7 +12,8 @@
     "test:cov": "jest --coverage --no-cache",
     "build": "npm run clean && node ./node_modules/typescript/bin/tsc",
     "clean": "node scripts/clean.js",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "generate-own-readme":"ts-node scripts/generateOwnReadme"
   },
   "author": "Tony Hallett",
   "license": "ISC",
@@ -36,6 +37,7 @@
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "ts-jest": "^25.4.0",
+    "ts-node": "^8.10.1",
     "typescript": "^3.8.3"
   }
 }

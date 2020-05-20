@@ -1,4 +1,4 @@
-import { CodeReplacer, ComponentOptions, CodeInReadme, ComponentOptionsCommon, ComponentOptionsProps, PropsOrPropsWithOptions, Props, PropsOptions, GlobalComponentOptions, } from "../src/asset-management/AssetManager"
+import { CodeReplacer, ComponentOptions, CodeInReadme, ComponentOptionsCommon, ComponentOptionsProps, PropsOrPropsWithOptions, Props, PropsOptions, GlobalComponentOptions, ComponentInfoSeparators, } from "../src/asset-management/AssetManager"
 import { AssetFolderProvider, IComponentSorter, SortedComponentFolder, IComponentFolderOptionsProvider, ComponentOptionsWithProps, PropsAndOptions, ComponentComponentInfo, PropsCodeDetails} from "../src/asset-management/AssetFolderProvider"
 import { CodeDetails, ComponentInfo } from "../src/interfaces";
 import { LanguageReaderResult } from "../src/asset-management/LanguageReader";
@@ -38,7 +38,7 @@ describe('AssetFolderProvider', () => {
       assetFolderProvider.registerAssetFolderProviders({
         getComponentInfos:registered
       })
-      expect(await assetFolderProvider.getComponentInfos(folder, globalOptions as any)).toEqual([
+      expect(await assetFolderProvider.getComponentInfos(folder, globalOptions as any,undefined)).toEqual([
         componentInfo1,
         componentInfo2,
         componentInfo3,
@@ -80,15 +80,259 @@ describe('AssetFolderProvider', () => {
         const getComponentInfosForFolder = jest.fn().mockResolvedValueOnce([componentInfo1]).mockResolvedValueOnce([componentInfo2]);
         assetFolderProvider['getComponentInfosForFolder'] = getComponentInfosForFolder;
 
-        const res = await assetFolderProvider.getComponentInfos('readme-assets/components',{});
+        const res = await assetFolderProvider.getComponentInfos('readme-assets/components',{},undefined);
 
-        expect(getComponentInfosForFolder).toHaveBeenCalledWith('readme-assets/components/BComponent_1','BComponent');
-        expect(getComponentInfosForFolder).toHaveBeenCalledWith('readme-assets/components/AComponent_2','AComponent');
+        expect(getComponentInfosForFolder).toHaveBeenCalledWith('readme-assets/components/BComponent_1','BComponent',true,undefined);
+        expect(getComponentInfosForFolder).toHaveBeenCalledWith('readme-assets/components/AComponent_2','AComponent',false,undefined);
         expect(res).toEqual([componentInfo1,componentInfo2]);
       });
       
     })
     describe('getComponentInfosForFolder', () => {
+      describe('separators', () => {
+        describe('first component should not have a separator', () => {
+          it('should not have a separator when no props',async () => {
+            const assetFolderProvider = new AssetFolderProvider(
+              {
+                path:{
+                  join(...paths:string[]){return paths.join('/')}
+                }
+              } as any,
+              {} as any,
+              {
+                getOptions:()=>Promise.resolve({})
+              } as any,
+              noopSorter,
+              {} as any
+            );
+            
+            assetFolderProvider['getMergedOptions']=()=>({});
+            assetFolderProvider.readReadMe = ()=>Promise.resolve('some readme');
+            assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
+            assetFolderProvider['getComponentByPath'] = () => null as any;
+
+            const componentAssetFolderPath = 'readme-assets/components/Component';
+            const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component',true,{componentSeparator:'----'});
+            
+            expect(componentInfos[0].readme).toBe('some readme');
+          })
+          it.skip('should not have a separator when props', () => {
+
+          })
+          //need to do props and not props
+          //will need to set up so that the separator is present
+        })
+        describe('second component can have a ComponentPropsSeparator or ComponentSeparator', () => {
+          interface SecondComponentTest{
+            description:string,
+            separators?:ComponentInfoSeparators,
+            readme?:string,
+            expectedReadme:string|undefined,
+          }
+          describe('no props', () => {
+            
+            const tests:SecondComponentTest[] = [
+              {
+                readme:'readme',
+                separators:{
+                  componentSeparator:'-'
+                },
+                expectedReadme:'-readme',
+                description:'prepends component separator to readme'
+              },
+              {
+                separators:{
+                  componentSeparator:'-'
+                },
+                expectedReadme:'-',
+                description:'separates when no readme'
+              },
+              {
+                readme:'readme',
+                expectedReadme:'readme',
+                description:'no component separator'
+              },
+              {
+                expectedReadme:undefined,
+                description:'no component separator, no readme',
+                separators:{
+                  componentPropsSeparator:'-'
+                }
+              }
+            ];
+  
+            tests.forEach(test => {
+              it(test.description,async () => {
+                const assetFolderProvider = new AssetFolderProvider(
+                  {
+                    path:{
+                      join(...paths:string[]){return paths.join('/')}
+                    }
+                  } as any,
+                  {} as any,
+                  {
+                    getOptions:()=>Promise.resolve({})
+                  } as any,
+                  noopSorter,
+                  {} as any
+                );
+                
+                assetFolderProvider['getMergedOptions']=()=>({});
+                assetFolderProvider.readReadMe = ()=>Promise.resolve(test.readme);
+                assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
+                assetFolderProvider['getComponentByPath'] = () => null as any;
+    
+                const componentAssetFolderPath = 'readme-assets/components/Component';
+                const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component',false,test.separators);
+                
+                expect(componentInfos[0].readme).toBe(test.expectedReadme);
+              })
+            })
+          })
+          describe('props', () => {
+            const tests:SecondComponentTest[]=[
+              {
+                readme:'readme',
+                description:'component props preference',
+                separators:{
+                  componentSeparator:'C',
+                  componentPropsSeparator:'P'
+                },
+                expectedReadme:'Preadme'
+              },
+              {
+                readme:'readme',
+                description:'component separator fallback',
+                separators:{
+                  componentSeparator:'C',
+                },
+                expectedReadme:'Creadme'
+              },
+              {
+                description:'separator no readme',
+                separators:{
+                  componentPropsSeparator:'P'
+                },
+                expectedReadme:'P'
+              },
+              {
+                readme:'readme',
+                description:'no separator',
+                expectedReadme:'readme'
+              },
+              {
+                description:'no separator, no readme',
+                expectedReadme:undefined
+              }
+              
+            ]
+
+            
+            tests.forEach(test => {
+              it(test.description, async () => {
+                const assetFolderProvider = new AssetFolderProvider(null as any,null as any, null as any, null as any, null as any);
+                const componentComponentInfo :ComponentComponentInfo = {
+                  readme:test.readme,
+                  codeDetails:undefined as any,
+                  Component:undefined as any
+                }
+                assetFolderProvider['getComponentComponentInfo'] = ()=>Promise.resolve(componentComponentInfo);
+                
+                assetFolderProvider['getPropsCodeDetails'] = () => Promise.resolve(undefined as any);
+                const result = await assetFolderProvider['generateComponentInfosForAllProps'](
+                  {
+                    props:[]
+                  },null as any,'','',false,test.separators);
+                expect(result[0].readme).toBe(test.expectedReadme);
+              })
+            })
+          })
+          
+        })
+        describe('props can have PropsSeparator or ComponentPropsSeparator or ComponentSeparator', ()=> {
+          type PropsReadme<T> = [T,T];
+          interface SeparatedPropsTest{
+            description:string,
+            separators?:ComponentInfoSeparators,
+            readmes:PropsReadme<string|undefined>,
+            expectedReadmes:PropsReadme<string>,
+            isFirst:boolean
+          }
+          const tests:SeparatedPropsTest[] = [
+            {
+              description:'has props separator regardless of isFirst for all',
+              isFirst:true,
+              readmes:['readme1','readme2'],
+              separators:{
+                propSeparator:'p'
+              },
+              expectedReadmes:['preadme1','preadme2']
+            },
+            {
+              description:'preference propsSeparator',
+              isFirst:false,
+              readmes:['readme1','readme2'],
+              separators:{
+                propSeparator:'p',
+                componentPropsSeparator:'cp',
+                componentSeparator:'c'
+              },
+              expectedReadmes:['preadme1','preadme2']
+            },
+            {
+              description:'fallback componentPropsSeparator',
+              isFirst:true,
+              readmes:['readme1','readme2'],
+              separators:{
+                componentPropsSeparator:'cp',
+                componentSeparator:'c'
+              },
+              expectedReadmes:['cpreadme1','cpreadme2']
+            },
+            {
+              description:'fallback componentSeparator',
+              isFirst:true,
+              readmes:['readme1','readme2'],
+              separators:{
+                componentSeparator:'c'
+              },
+              expectedReadmes:['creadme1','creadme2']
+            },
+            {
+              description:'separates when no readme',
+              isFirst:true,
+              readmes:[undefined,undefined],
+              separators:{
+                componentSeparator:'c'
+              },
+              expectedReadmes:['c','c']
+            }
+          ];
+          tests.forEach(test => {
+            it(test.description, async () => {
+              const assetFolderProvider = new AssetFolderProvider(null as any,null as any, null as any, null as any, null as any);
+              const componentComponentInfo :ComponentComponentInfo = {
+                readme:'',
+                codeDetails:undefined as any,
+                Component:undefined as any
+              }
+              assetFolderProvider['getComponentComponentInfo'] = ()=>Promise.resolve(componentComponentInfo);
+              
+              assetFolderProvider['getPropsCodeDetails'] = () => Promise.resolve({language:'',code:['','']} as PropsCodeDetails);
+              assetFolderProvider['getPropsAndOptions'] = ()=>({props:{},propsOptions:{}})
+              assetFolderProvider['getPropsReadme'] = jest.fn().mockResolvedValueOnce(test.readmes[0]).mockResolvedValueOnce(test.readmes[1]);
+              const result = await assetFolderProvider['generateComponentInfosForAllProps'](
+                {
+                  props:[{},{}]
+                },{},'','',false,test.separators);
+              expect(result.length).toBe(3)
+              expect(result[1].readme).toBe(test.expectedReadmes[0]);
+              expect(result[2].readme).toBe(test.expectedReadmes[1]);
+            })
+          })
+        })
+        
+      })
       describe('has props', () => {
         it('should call generateComponentInfosForAllProps when component options has props with length > 0', async () => {
           const componentOptions:ComponentOptions = {
@@ -113,9 +357,9 @@ describe('AssetFolderProvider', () => {
           const mergedOptions = {merged:'option'} as any;
           assetFolderProvider['getMergedOptions'] = () => mergedOptions;
 
-          const componentInfosForFolder = await assetFolderProvider['getComponentInfosForFolder']('path','name');
+          const componentInfosForFolder = await assetFolderProvider['getComponentInfosForFolder']('path','name',{pass:'through'} as any,{componentSeparator:'X'});
           expect(componentInfosForFolder).toBe(mockComponentInfos);
-          expect(generateComponentInfosForAllProps).toHaveBeenCalledWith(componentOptions,mergedOptions,'path','name');
+          expect(generateComponentInfosForAllProps).toHaveBeenCalledWith(componentOptions,mergedOptions,'path','name',{pass:'through'},{componentSeparator:'X'});
         })
         describe('generateComponentInfosForAllProps', () => {
           beforeEach(()=>{
@@ -171,7 +415,7 @@ describe('AssetFolderProvider', () => {
             assetFolderProvider['getPropsCodeDetails'] = getPropsCodeDetails;
             assetFolderProvider['getPropsReadme'] = getPropsReadme;
             return assetFolderProvider['generateComponentInfosForAllProps'](componentOptions
-            ,mergedOptions,componentAssetFolder,componentAssetFolderName)
+            ,mergedOptions,componentAssetFolder,componentAssetFolderName,true,undefined)
           }
           
           it('should have ComponentInfo for component with readme and codeDetails only', async () => {
@@ -419,7 +663,7 @@ describe('AssetFolderProvider', () => {
             assetFolderProvider['getComponentByPath'] = () => null as any;
 
             const componentAssetFolderPath = 'readme-assets/components/Component';
-            const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+            const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component',true,undefined);
             
             expect(readReadMe).toHaveBeenCalledWith(componentAssetFolderPath);
             expect(componentInfos.length).toBe(1);
@@ -489,7 +733,7 @@ describe('AssetFolderProvider', () => {
             assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
 
             const componentAssetFolderPath = 'readme-assets/components/Component';
-            const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+            const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component',true,undefined);
             
             expect(componentInfos[0].componentScreenshot).toEqual(expect.objectContaining(mergedOptions.screenshotOptions));
           })
@@ -515,7 +759,7 @@ describe('AssetFolderProvider', () => {
             assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
 
             const componentAssetFolderPath = 'readme-assets/components/Component';
-            const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+            const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component',true,undefined);
             
             expect(componentInfos[0].componentScreenshot).toEqual({type:'jpeg',Component:component});
           })
@@ -541,7 +785,7 @@ describe('AssetFolderProvider', () => {
               assetFolderProvider.getComponentByPath = () => componentByPath;
   
               const componentAssetFolderPath = 'readme-assets/components/Component';
-              const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+              const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component',true,undefined);
               
               expect(componentInfos[0].componentScreenshot).toEqual({type:'jpeg',Component:componentByPath});
             })
@@ -622,7 +866,7 @@ describe('AssetFolderProvider', () => {
             assetFolderProvider.getComponentCode=getComponentCode;
             assetFolderProvider.getComponentByPath = () => null as any;
             const componentAssetFolderPath = 'readme-assets/components/Component';
-            const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+            const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component',true,undefined);
             
             expect(componentInfos[0].codeDetails).toEqual(componentCode);
           })
@@ -658,7 +902,7 @@ describe('AssetFolderProvider', () => {
               }
               assetFolderProvider['getMergedOptions'] = () => (mergedOptions);
 
-              await assetFolderProvider['getComponentInfosForFolder']('','');
+              await assetFolderProvider['getComponentInfosForFolder']('','',true,undefined);
               expect(getComponentCode).toHaveBeenCalledWith(expect.anything(),mergedOptions.codeInReadme, mergedOptions.codeReplacer)
             })
             it('should return empty if mergedOptions.codeInReadme is None', async () => {
@@ -794,7 +1038,7 @@ describe('AssetFolderProvider', () => {
                   assetFolderProvider['readReadMe'] = () => Promise.resolve('');
                   assetFolderProvider['getComponentByPath'] = () => ({} as any)
                   
-                  await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+                  await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component',true,undefined);
                   
                   const expectedProvider = test.expectedReadCode? readComponentCode: optionsProviderGetComponentCode;
                   expect(expectedProvider).toHaveBeenCalledWith(test.expectedFirstArg,false);
@@ -891,7 +1135,7 @@ describe('AssetFolderProvider', () => {
     
               const spiedGetMergedOptions = jest.spyOn<any,any>(assetFolderProvider,'getMergedOptions');
              
-              await assetFolderProvider.getComponentInfos('',test.globalOptions);
+              await assetFolderProvider.getComponentInfos('',test.globalOptions,undefined);
               const mergedOptions = spiedGetMergedOptions.mock.results[0].value;
               expect(mergedOptions).toEqual(test.expectedMergedOptions);
             })
@@ -951,7 +1195,7 @@ describe('AssetFolderProvider', () => {
               }
 
               const componentAssetFolderPath = 'readme-assets/components/Component';
-              const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+              const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component',true,undefined);
               
               
               expect(componentInfos.length).toBe(1);
@@ -1015,7 +1259,7 @@ describe('AssetFolderProvider', () => {
             assetFolderProvider.getComponentByPath = getComponentByPath;
             assetFolderProvider['readComponentCode'] = readComponentCode;
 
-            await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
+            await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component',true,undefined);
             
             expect(readComponentCode.mock.calls[0][0]).toBe(test.expectedComponentPath);
             expect(getComponentByPath.mock.calls[0][0]).toBe(test.expectedComponentPath);

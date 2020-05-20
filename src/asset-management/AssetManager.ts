@@ -22,15 +22,27 @@ export type ComponentOptionsNoId = Omit<ComponentOptionsCommon,'id'>;
 
 export type GlobalComponentOptions = ComponentOptionsCommon&{altTextFromFolderName?:boolean}|undefined
 
+export interface FirstLastSeparators{
+  first?:string,
+  last?:string
+}
+export interface ComponentInfoSeparators{
+  componentSeparator?:string,
+  componentPropsSeparator?:string,
+  propSeparator?:string
+}
+export type Separators = FirstLastSeparators & ComponentInfoSeparators;
+
 export interface IAssetManagerOptions{
   readmeAssetsFolderPath:string,
   puppeteerLaunchOptions:puppeteer.LaunchOptions|undefined,
   globalComponentOptions:GlobalComponentOptions,
   imageBeforeCode?:boolean
+  separators?:Separators
 }
 
 export interface IAssetFolderProvider{
-  getComponentInfos(componentAssetsFolder:string,globalOptions:GlobalComponentOptions):Promise<ComponentInfo[]>
+  getComponentInfos(componentAssetsFolder:string,globalOptions:GlobalComponentOptions,separators:ComponentInfoSeparators|undefined):Promise<ComponentInfo[]>
 
 }
 
@@ -82,7 +94,7 @@ export class AssetManager implements IAssetManager {
   private getAssetFolderComponentInfos():Promise<ComponentInfo[]>{
     // this could be an option
     const componentAssetsFolder = this.pathInReadmeAssetsFolder('components');
-    return this.assetFolderProvider.getComponentInfos(componentAssetsFolder,this.options.globalComponentOptions);
+    return this.assetFolderProvider.getComponentInfos(componentAssetsFolder,this.options.globalComponentOptions,this.options.separators);
   }
   
   async cleanComponentImages():Promise<void> {
@@ -93,7 +105,19 @@ export class AssetManager implements IAssetManager {
   }
   async readSurroundingReadme(isPre: boolean):Promise<string|undefined> {
     const readmePaths: string[] = isPre ? ['README.md', 'READMEPre.md'] : ['READMEPost.md'];
-    const { read } = await this.system.fs.readUntilExists(...readmePaths.map(readmeName => this.pathInReadmeAssetsFolder(readmeName)));
+    let { read } = await this.system.fs.readUntilExists(...readmePaths.map(readmeName => this.pathInReadmeAssetsFolder(readmeName)));
+    if(read){
+      if(isPre){
+        if(this.options.separators?.first){
+          read=read+=this.options.separators.first;
+        }
+      }else{
+        if(this.options.separators?.last){
+          read=this.options.separators.last + read;
+        }
+      }
+
+    }
     return read;
   }
   async getComponentInfos():Promise<ComponentInfo[]> {

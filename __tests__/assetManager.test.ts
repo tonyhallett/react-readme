@@ -1,4 +1,4 @@
-import {AssetManager, IAssetFolderProvider, ComponentInfoProvider} from '../src/asset-management/AssetManager'
+import {AssetManager, IAssetFolderProvider, ComponentInfoProvider, IAssetManagerOptions} from '../src/asset-management/AssetManager'
 import { IAssetManager } from '../src/interfaces';
 
 describe('AssetManager', () => {
@@ -90,11 +90,12 @@ describe('AssetManager', () => {
   })
   describe('should read surrounding read me', () => {
     let mockReadUntilExists:jest.Mock
-    function createAssetManager(readUntilExists:jest.Mock){
+    function createAssetManager(readUntilExists:jest.Mock,additionalOptions:Partial<IAssetManagerOptions>={}){
       mockReadUntilExists = readUntilExists;
       const assetManager:IAssetManager = new AssetManager(
         {
           readmeAssetsFolderPath:'readme-assets-path',
+          ...additionalOptions
         } as any,
         null as any,
         {
@@ -125,6 +126,24 @@ describe('AssetManager', () => {
       expect(pre).toBe('Some post markdown');
       expect(mockReadUntilExists).toHaveBeenCalledWith('readme-assets-path/READMEPost.md');
     })
+    it('should append first separator if pre exists', async () => {
+      const assetManager = createAssetManager(jest.fn().mockReturnValue({read:'Some pre markdown'}),{
+        separators:{
+          first:'first'
+        }
+      });
+      const pre =  await assetManager.readSurroundingReadme(true);
+      expect(pre).toBe('Some pre markdownfirst');
+    })
+    it('should prepend last separator if post exists',async () => {
+      const assetManager = createAssetManager(jest.fn().mockReturnValue({read:'Some post markdown'}),{
+        separators:{
+          last:'post'
+        }
+      });
+      const pre =  await assetManager.readSurroundingReadme(false);
+      expect(pre).toBe('postSome post markdown');
+    })
 
   });
 
@@ -151,7 +170,7 @@ describe('AssetManager', () => {
       );
       const infos = await assetManager.getComponentInfos();
       expect(infos).toEqual(componentInfos);
-      expect(getComponentInfos).toHaveBeenCalledWith<Parameters<IAssetFolderProvider['getComponentInfos']>>('readme-assets/components',options.globalComponentOptions);
+      expect(getComponentInfos).toHaveBeenCalledWith<Parameters<IAssetFolderProvider['getComponentInfos']>>('readme-assets/components',options.globalComponentOptions,undefined);
     });
     it('should get from all registered component info providers and AssetFolderProvider', async () => {
       const componentInfos = [ {mock:'componentinfo'}, {mock:'componentinfo2'}  ]
