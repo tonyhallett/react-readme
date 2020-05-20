@@ -779,20 +779,13 @@ describe('generate', () => {
     })();
     //#endregion
     
+    //there are options affecting props that have not tested but covered by unit tests
+
     const propsIntegrationTest:IntegrationTest = (() => {
-      //ideally will create additional props.readme
-      //will want to provide and not provide alt text
-      //will need the react readme
-      //additional expectations
-
-      //will do with react-readme as js first ( is there a test that uses ts ?)
-      //get react readmes
-      //need to parameterize with the propsCodeInReadme
-
       const componentFolders:ComponentFolder[] = [
         {
-          code:{ // should change to allow undefined if allowing in the react readme
-            contents:'module.exports = function (){}',
+          code:{
+            contents:'module.exports = function Component(){}',
             fileName:'index.js'
           },
           name:'Component',
@@ -800,7 +793,9 @@ describe('generate', () => {
           reactReadme:`
             module.exports = {
               props:[
-                {prop1:1},[{prop1:2},{altText:'props2 alt text', readme:'props2 read me'}]
+                {prop1:1},
+                [{prop1:2},{altText:'props2 alt text', readme:'props2 read me'}],
+                [{prop1:3},{altText:'props3 alt text', readmeFileName:'props3_readme.md'}]
               ]
             }
           `
@@ -841,6 +836,18 @@ describe('generate', () => {
             componentImagePath:path.join('README-assets','images',`Component-props-1.png`)
           }
         },
+        {
+          useReadme:true,
+          readme:'props3 read me from file',
+          codeDetails:{
+            code:'{prop1:3}',
+            language:'javascript'
+          },
+          imageDetails:{
+            altText:'props3 alt text',
+            componentImagePath:path.join('README-assets','images',`Component-props-2.png`)
+          }
+        },
 
       ]
 
@@ -858,7 +865,19 @@ describe('generate', () => {
             altTextFromFolderName:true
           }
           `
-        ]
+        ],
+        additionalFiles:[
+          {
+            fileName:path.join('components','Component','props3_readme.md'),
+            contents:'props3 read me from file'
+          }
+        ],
+        additionalExpectations(){
+          const componentScreenshots = mockPuppeteerGenerateAndWrite.mock.calls[0][0];
+          componentScreenshots.forEach(componentScreenshot => {
+            expect((componentScreenshot.Component as any).toString()).toBe('function Component(){}');
+          })
+        }
       }
       return test;
     })();

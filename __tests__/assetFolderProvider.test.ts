@@ -290,11 +290,11 @@ describe('AssetFolderProvider', () => {
               })
               it('should be read from options.readmeFileName if present', async () => {
                 const assetFolderProvider = new AssetFolderProvider(null as any,null as any, null as any, null as any, null as any);
-                const readComponentReadMe = jest.fn().mockResolvedValue('props readme from file');
-                assetFolderProvider['readComponentReadMe']=readComponentReadMe;
+                const readReadMe = jest.fn().mockResolvedValue('props readme from file');
+                assetFolderProvider['readReadMe']=readReadMe;
                 const propsReadme = await assetFolderProvider['getPropsReadme']({readmeFileName:'props.readme'},'path');
                 expect(propsReadme).toBe('props readme from file');
-                expect(readComponentReadMe).toHaveBeenCalledWith('path','props.readme',true);
+                expect(readReadMe).toHaveBeenCalledWith('path','props.readme',true);
               })
               describe('readComponentReadMe', () => {
                 const componentAssetFolder = 'components/component1';
@@ -317,7 +317,7 @@ describe('AssetFolderProvider', () => {
                     }
                   } as any,null as any, null as any, null as any, null as any);
 
-                  return assetFolderProvider['readComponentReadMe'](componentAssetFolder,readmeName,throwIfDoesNotExist);
+                  return assetFolderProvider['readReadMe'](componentAssetFolder,readmeName,throwIfDoesNotExist);
                 }
                 it('should check exists in componentAssetFolder', async () => {
                   await readComponentReadmeTest(false,'areadme.md',false);
@@ -397,7 +397,7 @@ describe('AssetFolderProvider', () => {
       describe('does not have props -  [ComponentInfo]', () => {
         describe('component readme', () => {
           it('should have read component readme from component folder in props',async () => {
-            const readComponentReadMe = jest.fn().mockResolvedValue('some readme');
+            const readReadMe = jest.fn().mockResolvedValue('some readme');
             
             const assetFolderProvider = new AssetFolderProvider(
               {
@@ -414,14 +414,14 @@ describe('AssetFolderProvider', () => {
             );
             
             assetFolderProvider['getMergedOptions']=()=>({});
-            assetFolderProvider.readComponentReadMe = readComponentReadMe;
+            assetFolderProvider.readReadMe = readReadMe;
             assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
             assetFolderProvider['getComponentByPath'] = () => null as any;
 
             const componentAssetFolderPath = 'readme-assets/components/Component';
             const componentInfos = await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
             
-            expect(readComponentReadMe).toHaveBeenCalledWith(componentAssetFolderPath);
+            expect(readReadMe).toHaveBeenCalledWith(componentAssetFolderPath);
             expect(componentInfos.length).toBe(1);
             expect(componentInfos[0].readme).toBe('some readme');
           })
@@ -442,7 +442,7 @@ describe('AssetFolderProvider', () => {
               } as any,{
                 require
               },{} as any,noopSorter,{} as any);
-              const componentReadme = await assetFolderProvider.readComponentReadMe('readme-assets/components/Component');
+              const componentReadme = await assetFolderProvider.readReadMe('readme-assets/components/Component');
               expect(componentReadme).toEqual('some read me');
               [exists, readFileString].forEach(mock => {
                 expect(mock).toHaveBeenCalledWith('readme-assets/components/Component/README.md');
@@ -460,7 +460,7 @@ describe('AssetFolderProvider', () => {
                 } as any,{
                   require
                 },{} as any,noopSorter,{} as any);
-                const componentReadme = await assetFolderProvider.readComponentReadMe('readme-assets/components/Component');
+                const componentReadme = await assetFolderProvider.readReadMe('readme-assets/components/Component');
                 expect(componentReadme).toBeUndefined();
             })
           })
@@ -485,7 +485,7 @@ describe('AssetFolderProvider', () => {
               },
             }
             assetFolderProvider['getMergedOptions']=()=>mergedOptions as any;
-            assetFolderProvider.readComponentReadMe = () => Promise.resolve({} as any);
+            assetFolderProvider.readReadMe = () => Promise.resolve({} as any);
             assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
 
             const componentAssetFolderPath = 'readme-assets/components/Component';
@@ -511,7 +511,7 @@ describe('AssetFolderProvider', () => {
               },
             }
             assetFolderProvider['getMergedOptions']=()=>mergedOptions as any;
-            assetFolderProvider.readComponentReadMe = () => Promise.resolve({} as any);
+            assetFolderProvider.readReadMe = () => Promise.resolve({} as any);
             assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
 
             const componentAssetFolderPath = 'readme-assets/components/Component';
@@ -535,7 +535,7 @@ describe('AssetFolderProvider', () => {
                 },
               }
               assetFolderProvider['getMergedOptions']=()=>mergedOptions as any;
-              assetFolderProvider.readComponentReadMe = () => Promise.resolve({} as any);
+              assetFolderProvider.readReadMe = () => Promise.resolve({} as any);
               assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
               const componentByPath = ()=>({}) as any;
               assetFolderProvider.getComponentByPath = () => componentByPath;
@@ -618,7 +618,7 @@ describe('AssetFolderProvider', () => {
               codeInReadme:'Js'
             }
             assetFolderProvider['getMergedOptions']=()=>mergedOptions as any;
-            assetFolderProvider.readComponentReadMe = () => Promise.resolve({} as any);
+            assetFolderProvider.readReadMe = () => Promise.resolve({} as any);
             assetFolderProvider.getComponentCode=getComponentCode;
             assetFolderProvider.getComponentByPath = () => null as any;
             const componentAssetFolderPath = 'readme-assets/components/Component';
@@ -645,7 +645,7 @@ describe('AssetFolderProvider', () => {
                 noopSorter,
                 {} as any);
               
-              assetFolderProvider['readComponentReadMe'] = () => Promise.resolve('')
+              assetFolderProvider['readReadMe'] = () => Promise.resolve('')
               assetFolderProvider['getComponentByPath'] = () => Promise.resolve({}) as any;
 
               const getComponentCode = jest.fn().mockResolvedValue({});
@@ -791,7 +791,7 @@ describe('AssetFolderProvider', () => {
                   assetFolderProvider['getMergedOptions']=()=>({});
                   assetFolderProvider['getAbsolutePathToJs'] = () => '';
                   assetFolderProvider['readComponentCode'] = readComponentCode;
-                  assetFolderProvider['readComponentReadMe'] = () => Promise.resolve('');
+                  assetFolderProvider['readReadMe'] = () => Promise.resolve('');
                   assetFolderProvider['getComponentByPath'] = () => ({} as any)
                   
                   await assetFolderProvider['getComponentInfosForFolder'](componentAssetFolderPath,'Component');
@@ -884,7 +884,7 @@ describe('AssetFolderProvider', () => {
                 sort:(folderNames:string[])=>[{componentFolderName:'',parsedName:''}]
               },{} as any
               );
-              assetFolderProvider['readComponentReadMe']=()=>Promise.resolve('');
+              assetFolderProvider['readReadMe']=()=>Promise.resolve('');
               assetFolderProvider['getComponentCode'] = ()=>Promise.resolve('') as any;
               assetFolderProvider['getComponentByPath'] =()=> ({} as any)
     
@@ -943,7 +943,7 @@ describe('AssetFolderProvider', () => {
               );
               
               assetFolderProvider['getMergedOptions']=()=>({});
-              assetFolderProvider.readComponentReadMe = () => Promise.resolve('');
+              assetFolderProvider.readReadMe = () => Promise.resolve('');
               assetFolderProvider.getComponentCode=()=>Promise.resolve({} as any);
               assetFolderProvider['getComponentByPath'] = () => null as any;
               if(test.globalOptions){
@@ -1011,7 +1011,7 @@ describe('AssetFolderProvider', () => {
             
             assetFolderProvider['getMergedOptions']=()=>({});
 
-            assetFolderProvider.readComponentReadMe = () => Promise.resolve({} as any);
+            assetFolderProvider.readReadMe = () => Promise.resolve({} as any);
             assetFolderProvider.getComponentByPath = getComponentByPath;
             assetFolderProvider['readComponentCode'] = readComponentCode;
 

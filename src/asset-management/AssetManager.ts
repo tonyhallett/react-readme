@@ -25,7 +25,8 @@ export type GlobalComponentOptions = ComponentOptionsCommon&{altTextFromFolderNa
 export interface IAssetManagerOptions{
   readmeAssetsFolderPath:string,
   puppeteerLaunchOptions:puppeteer.LaunchOptions|undefined,
-  globalComponentOptions:GlobalComponentOptions
+  globalComponentOptions:GlobalComponentOptions,
+  imageBeforeCode?:boolean
 }
 
 export interface IAssetFolderProvider{
@@ -60,6 +61,7 @@ export class AssetManager implements IAssetManager {
   private componentImagesFolderPath!: string;
   private componentInfoProviders:ComponentInfoProvider<any>[] = [];
   puppeteerLaunchOptions:puppeteer.LaunchOptions|undefined;
+  imageBeforeCode:boolean
   constructor(
     private readonly options:IAssetManagerOptions,
     
@@ -71,6 +73,7 @@ export class AssetManager implements IAssetManager {
       // could have this as an option 
       this.componentImagesFolderPath = this.pathInReadmeAssetsFolder('images'); 
       this.puppeteerLaunchOptions = options.puppeteerLaunchOptions;
+      this.imageBeforeCode = options.imageBeforeCode===undefined?true:options.imageBeforeCode;
   }
   
   private pathInReadmeAssetsFolder(path: string):string {

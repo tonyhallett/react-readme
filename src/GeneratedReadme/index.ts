@@ -6,6 +6,7 @@ export type MarkdownImageCreator = (path:string,altText:string)=>string
 export type NewlineSpacer = (numberOfNewlines:number,parts:Array<Array<string>>)=>string
 export class GeneratedReadme implements IGeneratedReadme {
   private componentsReadmeEntries:Array<Array<string>> = [];
+  imageBeforeCode!:boolean
   
   constructor(
     private readonly markdownCodeCreator:MarkdownCodeCreator,
@@ -25,10 +26,15 @@ export class GeneratedReadme implements IGeneratedReadme {
   }
 
   addComponentGeneration(codeDetails: CodeDetails|undefined, componentReadme: string|undefined, imageDetails: ImageDetails|undefined): void {
+    const imageEntries = () => imageDetails===undefined?undefined:this.markdownImageCreator(imageDetails.componentImagePath, imageDetails.altText);
+    const codeEntries = () => codeDetails===undefined?undefined:this.markdownCodeCreator(codeDetails.code,codeDetails.language);
+    const second = this.imageBeforeCode?imageEntries:codeEntries;
+    const third = this.imageBeforeCode?codeEntries:imageEntries;
+    
     this.addEntries(
       () => componentReadme,
-      () => imageDetails===undefined?undefined:this.markdownImageCreator(imageDetails.componentImagePath, imageDetails.altText),
-      () => codeDetails===undefined?undefined:this.markdownCodeCreator(codeDetails.code,codeDetails.language)
+      second,
+      third
     );
   }
   surroundWith(pre: string, post: string): void {

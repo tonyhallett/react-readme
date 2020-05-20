@@ -1,6 +1,6 @@
 import React from 'react';
 import generate from '../src/generate';
-import { ComponentInfo } from '../src/interfaces';
+import { ComponentInfo, IAssetManager, IGeneratedReadme } from '../src/interfaces';
 import { AssetManager} from '../src/asset-management/AssetManager';
 import { PuppeteerImageGeneratorWriter} from '../src/PuppeteerImageGeneratorWriter';
 import { GeneratedReadme} from '../src/GeneratedReadme';
@@ -16,6 +16,36 @@ const MockGeneratedReadmeWriter = GeneratedReadmeWriter as jest.MockedClass<type
 const MockPuppeteerImageGeneratorWriter = PuppeteerImageGeneratorWriter as jest.MockedClass<typeof PuppeteerImageGeneratorWriter>;
 const MockGeneratedReadme = GeneratedReadme as jest.MockedClass<typeof GeneratedReadme>;
 describe('generate', () => {
+  [true,false].forEach( imageBeforeCode => {
+    it(`should set imageBeforeCode - ${imageBeforeCode}`, async () => {
+      const assetManager:Partial<IAssetManager> = {
+        getComponentInfos(){
+          return Promise.resolve([]);
+        },
+        readSurroundingReadme(){ return Promise.resolve('')},
+        cleanComponentImages(){
+          return Promise.resolve();
+        },
+        imageBeforeCode
+
+      }
+      const generatedReadme:Partial<IGeneratedReadme> = {
+        surroundWith(){},
+      }
+      await generate(
+        assetManager as any, 
+        generatedReadme as any,
+        {
+          write(){}
+        } as any,
+        {
+          generateAndWrite:()=>Promise.resolve()
+        }
+      )
+      expect(generatedReadme.imageBeforeCode).toBe(imageBeforeCode)
+    })
+  });
+    
   it('should clean component images',async () => {
     const cleanComponentImages= jest.fn();
     await generate(
@@ -23,7 +53,7 @@ describe('generate', () => {
         getComponentInfos(){
           return Promise.resolve([]);
         },
-        readSurroundingReadme(){},
+        readSurroundingReadme(){ return Promise.resolve('')},
         cleanComponentImages
       } as any, {
         surroundWith(){},
@@ -42,8 +72,8 @@ describe('generate', () => {
       const getComponentInfos= jest.fn().mockResolvedValue([]);
       await generate(
         {
-          cleanComponentImages(){},
-          readSurroundingReadme(){},
+          cleanComponentImages(){ return Promise.resolve()},
+          readSurroundingReadme(){return Promise.resolve('')},
           getComponentInfos
         } as any, {
           surroundWith(){},
@@ -110,8 +140,8 @@ describe('generate', () => {
       ];
       await generate(
         {
-          cleanComponentImages(){},
-          readSurroundingReadme(){},
+          cleanComponentImages(){return Promise.resolve()},
+          readSurroundingReadme(){return Promise.resolve('')},
           getComponentInfos(){return Promise.resolve(componentInfos)},
           getComponentImagePath(png:string){
             return `relative/${png}`
@@ -173,6 +203,8 @@ describe('generate', () => {
       let generatedReadme:GeneratedReadme
       beforeEach(async ()=>{
         const assetManager = create(MockAssetManager);
+        assetManager.cleanComponentImages = () => Promise.resolve();
+        assetManager.readSurroundingReadme = () => Promise.resolve('');
         assetManager.getComponentInfos = jest.fn().mockResolvedValue(componentInfos);
         assetManager.getComponentImagePath = jest.fn(image => `readme-assets/images/${image}`);
         
@@ -213,9 +245,9 @@ describe('generate', () => {
     const surroundWith = jest.fn();
     await generate(
       {
-        cleanComponentImages(){},
+        cleanComponentImages(){ return Promise.resolve()},
         readSurroundingReadme(pre:boolean){
-          return pre?'Pre':'Post';
+          return Promise.resolve(pre?'Pre':'Post');
         },
         getComponentInfos(){return Promise.resolve([])}
       } as any, {
@@ -237,8 +269,8 @@ describe('generate', () => {
     }
     await generate(
       {
-        cleanComponentImages(){},
-        readSurroundingReadme(){},
+        cleanComponentImages(){return Promise.resolve()},
+        readSurroundingReadme(){return Promise.resolve('')},
         getComponentInfos(){return Promise.resolve([])}
       } as any, 
       generatedReadMe as any,

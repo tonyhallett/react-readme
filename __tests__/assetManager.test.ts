@@ -2,7 +2,42 @@ import {AssetManager, IAssetFolderProvider, ComponentInfoProvider} from '../src/
 import { IAssetManager } from '../src/interfaces';
 
 describe('AssetManager', () => {
-  it('should return the puppeteer launch options from options', async () => {
+  describe('it should expose imageBeforeCode from options', () => {
+    interface ImageBeforeCodeTest{
+      description:string
+      imageBeforeCode:boolean|undefined,
+      expectedImageBeforeCode:boolean
+    }
+    const tests:Array<ImageBeforeCodeTest> = [
+      {
+        description:'true',
+        expectedImageBeforeCode:true,
+        imageBeforeCode:true
+      },
+      {
+        description:'false',
+        expectedImageBeforeCode:false,
+        imageBeforeCode:false
+      },
+      {
+        description:'undefined defaults to true',
+        expectedImageBeforeCode:true,
+        imageBeforeCode:undefined
+      }
+    ];
+    tests.forEach(test => {
+      it(test.description, () => {
+        const assetManager:IAssetManager = new AssetManager({
+          imageBeforeCode:test.imageBeforeCode,
+          readmeAssetsFolderPath:'readme-assets'
+        } as any,null as any,{path:{join:()=>''}} as any);
+        
+        expect(assetManager.imageBeforeCode).toBe(test.expectedImageBeforeCode);
+      })
+    })
+  })
+  
+  it('should expose the puppeteer launch options from options', async () => {
     const puppeteerLaunchOptions = {};
     const assetManager:IAssetManager = new AssetManager({
       puppeteerLaunchOptions,

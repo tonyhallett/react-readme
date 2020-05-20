@@ -20,6 +20,7 @@ describe('GeneratedReadme result from toString', () => {
       it('should have an entry for each call to addComponentGeneration', () => {
         const newlineSpacer = jest.fn().mockReturnValue('spaced');
         const generatedReadme = new GeneratedReadme(jest.fn(),jest.fn(),newlineSpacer);
+        generatedReadme.imageBeforeCode = true;
         for(let i=0;i<numCalls;i++){
           generatedReadme.addComponentGeneration({code:'',language:''},'',{altText:'',componentImagePath:''});
         }
@@ -38,6 +39,7 @@ describe('GeneratedReadme result from toString', () => {
         beforeEach(()=> {
           jest.clearAllMocks();
           const generatedReadme = new GeneratedReadme(markdownCodeCreator,markdownImageCreator,newlineSpacer);
+          generatedReadme.imageBeforeCode = true;
           generatedReadme.addComponentGeneration(
             {code:'some code',language:'some language'},
             'component readme',
@@ -70,6 +72,7 @@ describe('GeneratedReadme result from toString', () => {
           
           
           const generatedReadme = new GeneratedReadme(markdownCodeCreator,markdownImageCreator,newlineSpacer);
+          generatedReadme.imageBeforeCode = true;
           generatedReadme.addComponentGeneration(
             definedArgument===0?{code:'code',language:'language'}:undefined,
             definedArgument===1?'component readme':undefined,
@@ -99,7 +102,28 @@ describe('GeneratedReadme result from toString', () => {
         })
         
       })
+
+      it('should have image after code if imageBeforeCode is false', () => {
+        const newlineSpacer = jest.fn().mockReturnValue('spaced');
+        const markdownImageCreator = jest.fn().mockReturnValue('markdown image');
+        const markdownCodeCreator = jest.fn().mockReturnValue('markdown code');
+        const generatedReadme = new GeneratedReadme(markdownCodeCreator,markdownImageCreator,newlineSpacer);
+        generatedReadme.imageBeforeCode = false;
+        generatedReadme.addComponentGeneration(
+          {code:'some code',language:'some language'},
+          'component readme',
+          {altText:'alt text',componentImagePath:'image path'}
+        );
+        
+        generatedReadme.toString();
+        const componentsReadmeParts = newlineSpacer.mock.calls[0][1];
+        expect(componentsReadmeParts[0].length).toBe(3);
+        const componentReadmeParts = componentsReadmeParts[0];
+        expect(componentReadmeParts[0]).toBe('component readme');
+        expect(componentReadmeParts[2]).toBe('markdown image');
+        expect(componentReadmeParts[1]).toBe('markdown code');
       })
+    })
       
 
     it('should have surrounded entries from surround with', () => {
@@ -108,6 +132,7 @@ describe('GeneratedReadme result from toString', () => {
       
       jest.clearAllMocks();
       const generatedReadme = new GeneratedReadme(jest.fn(),markdownImageCreator,newlineSpacer);
+      generatedReadme.imageBeforeCode = true;
       generatedReadme.addComponentGeneration(
         {code:'',language:''},
         '',

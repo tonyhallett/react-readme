@@ -65,7 +65,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
   private async getPropsReadme(propsOptions:PropsOptions,componentAssetFolder:string){
     let propsReadme = propsOptions.readme;
     if(propsOptions.readmeFileName){
-      propsReadme = await this.readComponentReadMe(componentAssetFolder,propsOptions.readmeFileName,true);
+      propsReadme = await this.readReadMe(componentAssetFolder,propsOptions.readmeFileName,true);
     }
     return propsReadme;
   }
@@ -125,7 +125,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     mergedOptions:ComponentOptionsCommon,
     componentAssetFolderPath:string,
     ):Promise<ComponentComponentInfo>{
-    const readme = await this.readComponentReadMe(componentAssetFolderPath);
+    const readme = await this.readReadMe(componentAssetFolderPath);
 
     const componentPath = componentOptions && componentOptions.componentPath ? this.getAbsolutePathToJs(componentAssetFolderPath, componentOptions.componentPath) :
       this.system.path.join(componentAssetFolderPath, 'index.js');
@@ -262,7 +262,7 @@ export class AssetFolderProvider implements IAssetFolderProvider {
     }
     return Component;
   }
-  async readComponentReadMe(componentAssetFolder: string,readmeName='README.md',throwIfDoesNotExist=false): Promise<string|undefined> {
+  async readReadMe(componentAssetFolder: string,readmeName='README.md',throwIfDoesNotExist=false): Promise<string|undefined> {
     const readmePath = this.system.path.join(componentAssetFolder, readmeName);
     const exists = await this.system.path.exists(readmePath);
     if(!exists){

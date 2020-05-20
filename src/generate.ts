@@ -5,7 +5,7 @@ export default async function generate(
   generatedReadMe: IGeneratedReadme, 
   generatedReadMeWriter: IGeneratedReadmeWriter, 
   puppeteerGeneratorWriter: IPuppeteerImageGeneratorWriter):Promise<void> {
-    
+    generatedReadMe.imageBeforeCode = assetManager.imageBeforeCode;
     await assetManager.cleanComponentImages();
     const componentInfos = await assetManager.getComponentInfos();
     const componentScreenshots:ComponentScreenshot[] = componentInfos.map( componentInfo => {

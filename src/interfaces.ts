@@ -11,6 +11,7 @@ export interface ImageDetails{
   altText:string
 }
 export interface IGeneratedReadme{
+  imageBeforeCode:boolean
   addComponentGeneration(codeDetails: CodeDetails|undefined, readme: string|undefined, imageDetails:ImageDetails|undefined):void
   surroundWith(pre:string|undefined,post:string|undefined):void
   toString():string
@@ -51,6 +52,7 @@ export interface IAssetManager{
   readSurroundingReadme(isPre:boolean):Promise<string|undefined>
 
   getComponentInfos():Promise<Array<ComponentInfo>>
+  imageBeforeCode:boolean
 }
 
 export interface Path{
