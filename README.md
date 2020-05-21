@@ -50,6 +50,6 @@ Green props
 {color:'green'}
 ```
 
-<style type="text/css">p {color:red;}</style>
+![alt text](https://via.placeholder.com/700x10/80eb34/80eb34 "")
 
 post

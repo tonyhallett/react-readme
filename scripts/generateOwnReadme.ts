@@ -88,15 +88,13 @@ async function createAndGenerate(pre:string,
     await generateReadme();
   }
 
-const inlineStyle = '<style type="text/css">p {color:red;}</style><p>okay</p>'
-
 async function demo1():Promise<void>{
   try{
     await createAndGenerate('pre','post',
     `export = {
       separators:{
         first:'${lineBreakedSeparatorCreator(red,true)}',
-        last:'${inlineStyle}\\n\\n',
+        last:'${lineBreakedSeparatorCreator(orange,false)}',
         componentSeparator:'${lineBreakedSeparatorCreator(orange,false)}',
         componentPropsSeparator:'${lineBreakedSeparatorCreator(yellow,false)}',
         propsSeparator:'${lineBreakedSeparatorCreator(green,false)}'
