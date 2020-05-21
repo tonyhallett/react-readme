@@ -50,6 +50,6 @@ Green props
 {color:'green'}
 ```
 
-<img src="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='10px' viewBox='0 0 100 10' preserveAspectRatio='none'%3e %3crect fill='cyan' width='100' height='10' /%3e %3c/svg%3e"/>
+<style type="text/css">p {color:red;}</style>
 
 post

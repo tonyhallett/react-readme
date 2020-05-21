@@ -12,7 +12,6 @@ const yellow = 'effa20';
 const blue = 'e89733';
 const green = '343ae3';
 
-const cyanSvgSeparator = createWidthExpandingLineBreakedColoredDataSVGSeparator(10)('cyan');
 
 const readmeAssetsPath = path.join(__dirname, '..','README-assets');
 async function cleanReadmeAssets(){
@@ -97,8 +96,7 @@ async function demo1():Promise<void>{
     `export = {
       separators:{
         first:'${lineBreakedSeparatorCreator(red,true)}',
-        last:\`${cyanSvgSeparator}\`,
-        //last:'${inlineStyle}\\n\\n',
+        last:'${inlineStyle}\\n\\n',
         componentSeparator:'${lineBreakedSeparatorCreator(orange,false)}',
         componentPropsSeparator:'${lineBreakedSeparatorCreator(yellow,false)}',
         propsSeparator:'${lineBreakedSeparatorCreator(green,false)}'
