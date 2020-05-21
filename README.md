@@ -2,6 +2,8 @@ pre
 
 ![alt text](https://via.placeholder.com/914x10/8c1925/8c1925 "")
 
+Component1 readme
+
 ![alt text](README-assets/images/Component1.png "")
 
 ```tsx
@@ -12,7 +14,7 @@ pre
 
 ![alt text](https://via.placeholder.com/914x10/effa20/effa20 "")
 
-
+Component with props readme
 
 ```tsx
 ({color}:{color:string})=>{

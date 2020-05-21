@@ -4,7 +4,7 @@ import * as ts from 'typescript';
 import { generateReadme }   from '../src/index';
 import {createColoredLinebreakedSeparatorCreator} from '../src/asset-management/separaterHelpers'
 
-
+//914 is readme width in github on laptop
 const lineBreakedSeparatorCreator = createColoredLinebreakedSeparatorCreator(914,10);
 const red = '8c1925';
 const green = '80eb34';
@@ -47,7 +47,6 @@ function compile(reactReadmes:string[]){
   const program =  ts.createProgram(
     reactReadmes,
     {
-      //declaration:true,
       esModuleInterop:true,
       module:ts.ModuleKind.CommonJS,
       target:ts.ScriptTarget.ES2015,
@@ -58,13 +57,16 @@ function compile(reactReadmes:string[]){
 }
 interface ComponentFolder{
   name:string,
-  reactReadmeTsx:string
+  reactReadmeTsx:string,
+  readme:string
 }
 async function generateComponentFolder(componentFolder:ComponentFolder):Promise<string>{
   const componentPath = readmeAssetsJoin('components',componentFolder.name);
   await fs.ensureDir(componentPath);
   const componentReactReadmePath = readmeAssetsJoin('components',componentFolder.name,'react-readme.tsx');
   await fs.writeFile(componentReactReadmePath,componentFolder.reactReadmeTsx,'utf8');
+  const componentReadmePath = readmeAssetsJoin('components',componentFolder.name,'README.md');
+  await fs.writeFile(componentReadmePath,componentFolder.readme,'utf8');
   return componentReactReadmePath;
 }
 async function createReadmeAssets(
@@ -102,6 +104,7 @@ async function demo1():Promise<void>{
     }`,[
       {
         name:'Component1',
+        readme:'Component1 readme',
         reactReadmeTsx:'' + 
 `
 import * as React from 'react';
@@ -113,6 +116,7 @@ export = {
       },
       {
         name:'Component_WithProps',
+        readme:'Component with props readme',
         reactReadmeTsx:'' + 
 `
 import * as React from 'react';
