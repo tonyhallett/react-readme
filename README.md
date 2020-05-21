@@ -1,6 +1,6 @@
 pre
 
-![alt text](https://via.placeholder.com/700x10/8c1925/8c1925 "")
+![alt text](https://via.placeholder.com/914x10/8c1925/8c1925 "")
 
 ![alt text](README-assets/images/Component1.png "")
 
@@ -10,7 +10,7 @@ pre
   }
 ```
 
-![alt text](https://via.placeholder.com/700x10/effa20/effa20 "")
+![alt text](https://via.placeholder.com/914x10/effa20/effa20 "")
 
 
 
@@ -20,7 +20,7 @@ pre
   }
 ```
 
-![alt text](https://via.placeholder.com/700x10/343ae3/343ae3 "")
+![alt text](https://via.placeholder.com/914x10/80eb34/80eb34 "")
 
 Red props
 
@@ -30,7 +30,7 @@ Red props
 {color:'red'}
 ```
 
-![alt text](https://via.placeholder.com/700x10/343ae3/343ae3 "")
+![alt text](https://via.placeholder.com/914x10/80eb34/80eb34 "")
 
 Orange props
 
@@ -40,7 +40,7 @@ Orange props
 {color:'orange'}
 ```
 
-![alt text](https://via.placeholder.com/700x10/343ae3/343ae3 "")
+![alt text](https://via.placeholder.com/914x10/80eb34/80eb34 "")
 
 Green props
 
@@ -50,6 +50,6 @@ Green props
 {color:'green'}
 ```
 
-![alt text](https://via.placeholder.com/700x10/80eb34/80eb34 "")
+![alt text](https://via.placeholder.com/914x10/343ae3/343ae3 "")
 
 post

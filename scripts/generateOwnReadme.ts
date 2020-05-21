@@ -2,15 +2,15 @@ import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as ts from 'typescript';
 import { generateReadme }   from '../src/index';
-import {createColoredLinebreakedSeparatorCreator,createWidthExpandingLineBreakedColoredDataSVGSeparator} from '../src/asset-management/separaterHelpers'
+import {createColoredLinebreakedSeparatorCreator} from '../src/asset-management/separaterHelpers'
 
 
-const lineBreakedSeparatorCreator = createColoredLinebreakedSeparatorCreator(700,10);
+const lineBreakedSeparatorCreator = createColoredLinebreakedSeparatorCreator(914,10);
 const red = '8c1925';
-const orange = '80eb34';
+const green = '80eb34';
 const yellow = 'effa20';
-const blue = 'e89733';
-const green = '343ae3';
+const orange = 'e89733';
+const blue = '343ae3';
 
 
 const readmeAssetsPath = path.join(__dirname, '..','README-assets');
@@ -94,7 +94,7 @@ async function demo1():Promise<void>{
     `export = {
       separators:{
         first:'${lineBreakedSeparatorCreator(red,true)}',
-        last:'${lineBreakedSeparatorCreator(orange,false)}',
+        last:'${lineBreakedSeparatorCreator(blue,false)}',
         componentSeparator:'${lineBreakedSeparatorCreator(orange,false)}',
         componentPropsSeparator:'${lineBreakedSeparatorCreator(yellow,false)}',
         propsSeparator:'${lineBreakedSeparatorCreator(green,false)}'
