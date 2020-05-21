@@ -25,38 +25,21 @@ function separate(readme:string,isFirst=false){
   return readme + '\\n\\n';
 }
 
-
-function btoa(str:string|Buffer) {
-  var buffer;
-
-  if (str instanceof Buffer) {
-    buffer = str;
-  } else {
-    buffer = Buffer.from(str.toString(), 'binary');
-  }
-
-  return buffer.toString('base64');
-}
-function svgToDataUri(svg:string){
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+export function svgSeparator(height:number,color:string){
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="${height}px" viewBox="0 0 100 ${height}" preserveAspectRatio="none">
+  <rect fill="${color}" width="100" height="${height}" />
+</svg>`
 }
 
 export function createWidthExpandingColoredDataSVGSeparator(height:number){
-  return (color:string) => svgToDataUri('' + 
-`<svg width="100%" height='${height}px' viewBox="0 0 100 ${height}" preserveAspectRatio="none">
-  <rect fill="${color}" width="100" height="${height}" />
-</svg>`
-  )
+  return (color:string) => svgToMiniDataURI(svgSeparator(height,color));
 }
 
-//todo separate is common
 export function createWidthExpandingLineBreakedColoredDataSVGSeparator(height:number){
   const widthExpandingColoredDataSVGSeparator=createWidthExpandingColoredDataSVGSeparator(height);
   return (color:string,isFirst = false) => {
     const datauri = widthExpandingColoredDataSVGSeparator(color);
-    //image creator already encodes
-    //const separator = imageCreator(datauri,'');
-    const separator = `![alt text](${datauri} "")`;
+    const separator = `<img src="${datauri}"/>`
     return separate(separator,isFirst);
   }
 }

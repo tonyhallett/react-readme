@@ -50,8 +50,6 @@ Green props
 {color:'green'}
 ```
 
-
-
-<img src="data:image/svg+xml,%3Csvg width='247' height='34' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23FFF' fill-rule='non.zero'%3E%3Cpath d='M13.918 ... 4.022-2.888 4.57V26h-4.46V7.975z' fill='%23D7DCE1'/%3E%3C/g%3E%3C/svg%3E"/>
+<img src="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='10px' viewBox='0 0 100 10' preserveAspectRatio='none'%3e %3crect fill='cyan' width='100' height='10' /%3e %3c/svg%3e"/>
 
 post

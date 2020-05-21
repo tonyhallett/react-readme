@@ -1,6 +1,6 @@
 {
   "name": "react-readme",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Run as a script to generate a readme.  It renders your react components as images and optionally inserts the code in the generated readme.",
   "main": "dist/index.js",
   "files": [
